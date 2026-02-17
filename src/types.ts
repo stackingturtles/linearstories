@@ -42,6 +42,18 @@ export interface CliConfig {
 	defaultLabels?: string[];
 }
 
+export interface ContextEntry {
+	name: string;
+	apiKey?: string;
+	defaultTeam?: string;
+	defaultProject?: string;
+	defaultLabels?: string[];
+}
+
+export interface MultiContextConfig {
+	contexts: ContextEntry[];
+}
+
 export interface ResolvedConfig {
 	apiKey: string;
 	defaultTeam: string | null;

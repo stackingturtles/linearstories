@@ -2,14 +2,16 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { ConfigError } from "../errors.ts";
-import type { CliConfig, ResolvedConfig } from "../types.ts";
-import { assertCliConfig } from "./schema.ts";
+import type { CliConfig, MultiContextConfig, ResolvedConfig } from "../types.ts";
+import { assertConfigFile, isMultiContextConfig } from "./schema.ts";
 
 export interface LoadConfigOptions {
 	/** Explicit path to a config file (e.g. from --config flag) */
 	configPath?: string;
 	/** Working directory used for .linearrc.json discovery */
 	cwd?: string;
+	/** Named context to select from a multi-context config */
+	context?: string;
 }
 
 /**
@@ -28,24 +30,59 @@ export async function loadConfig(options?: LoadConfigOptions): Promise<ResolvedC
 	const configPath = resolveConfigPath(options);
 	const raw = configPath ? await readConfigFile(configPath) : {};
 
-	// Validate shape
-	assertCliConfig(raw);
+	// Validate shape (flat or multi-context)
+	assertConfigFile(raw);
+
+	// Resolve multi-context → flat CliConfig
+	let config: CliConfig;
+
+	if (isMultiContextConfig(raw)) {
+		const multiConfig = raw as MultiContextConfig;
+		const contextName = options?.context;
+
+		if (!contextName) {
+			const names = multiConfig.contexts.map((c) => c.name).join(", ");
+			throw new ConfigError(
+				`Config file contains multiple contexts. Use --context <name> to select one. Available contexts: ${names}`,
+			);
+		}
+
+		const entry = multiConfig.contexts.find((c) => c.name === contextName);
+		if (!entry) {
+			const names = multiConfig.contexts.map((c) => c.name).join(", ");
+			throw new ConfigError(`Context "${contextName}" not found. Available contexts: ${names}`);
+		}
+
+		config = {
+			apiKey: entry.apiKey,
+			defaultTeam: entry.defaultTeam,
+			defaultProject: entry.defaultProject,
+			defaultLabels: entry.defaultLabels,
+		};
+	} else {
+		if (options?.context) {
+			throw new ConfigError(
+				"--context flag was specified but the config file does not use the multi-context format",
+			);
+		}
+		config = raw as CliConfig;
+	}
 
 	// Merge env var -- env takes precedence
 	const envApiKey = process.env.LINEAR_API_KEY;
 	if (envApiKey) {
-		raw.apiKey = envApiKey;
+		config.apiKey = envApiKey;
 	}
 
 	// API key is required
-	if (!raw.apiKey) {
+	if (!config.apiKey) {
 		throw new ConfigError(
 			"No API key found. Provide one via LINEAR_API_KEY environment variable, " +
 				'or set "apiKey" in your config file (.linearrc.json or ~/.config/linearstories/config.json).',
 		);
 	}
 
-	return resolveConfig(raw);
+	return resolveConfig(config);
 }
 
 // ---------------------------------------------------------------------------

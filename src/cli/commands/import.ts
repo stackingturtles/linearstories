@@ -69,6 +69,7 @@ export function registerImportCommand(program: Command) {
 		.description("Import user stories from markdown files to Linear")
 		.argument("<files...>", "Markdown file paths or glob patterns")
 		.option("-c, --config <path>", "Config file path")
+		.option("--context <name>", "Select a named context from multi-context config")
 		.option("-t, --team <name>", "Override default team")
 		.option("-p, --project <name>", "Override default project")
 		.option("--dry-run", "Validate without calling Linear", false)
@@ -83,7 +84,7 @@ export function registerImportCommand(program: Command) {
 				}
 
 				// Load config
-				const config = await loadConfig({ configPath: options.config });
+				const config = await loadConfig({ configPath: options.config, context: options.context });
 
 				// Create client
 				const client = createLinearClient(config.apiKey);

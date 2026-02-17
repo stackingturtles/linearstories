@@ -30,6 +30,7 @@ export function registerExportCommand(program: Command) {
 		.command("export")
 		.description("Export Linear issues to a markdown file")
 		.option("-c, --config <path>", "Config file path")
+		.option("--context <name>", "Select a named context from multi-context config")
 		.option("-t, --team <name>", "Override default team")
 		.option("-o, --output <file>", "Output file path", "./exported-stories.md")
 		.option("-p, --project <name>", "Filter by project")
@@ -39,7 +40,7 @@ export function registerExportCommand(program: Command) {
 		.option("--creator <email>", "Filter by creator")
 		.action(async (options) => {
 			try {
-				const config = await loadConfig({ configPath: options.config });
+				const config = await loadConfig({ configPath: options.config, context: options.context });
 				const client = createLinearClient(config.apiKey);
 
 				const filters: ExportFilters = {};

@@ -161,4 +161,77 @@ describe("loadConfig", () => {
 		expect(config.defaultProject).toBeNull();
 		expect(config.defaultLabels).toEqual([]);
 	});
+
+	// ------------------------------------------------------------------
+	// Multi-context config
+	// ------------------------------------------------------------------
+
+	describe("multi-context config", () => {
+		test("selects correct context by name (orgA)", async () => {
+			const configPath = join(FIXTURES_DIR, "multi-context.json");
+			const config = await loadConfig({ configPath, context: "orgA" });
+
+			expect(config.apiKey).toBe("lin_api_orgA_key123");
+			expect(config.defaultTeam).toBe("Engineering");
+			expect(config.defaultProject).toBe("Q1 Release");
+			expect(config.defaultLabels).toEqual(["User Story", "Feature"]);
+		});
+
+		test("selects different context (orgB)", async () => {
+			const configPath = join(FIXTURES_DIR, "multi-context.json");
+			const config = await loadConfig({ configPath, context: "orgB" });
+
+			expect(config.apiKey).toBe("lin_api_orgB_key456");
+			expect(config.defaultTeam).toBe("Design");
+			expect(config.defaultProject).toBe("Brand Refresh");
+			expect(config.defaultLabels).toEqual(["Design Task"]);
+		});
+
+		test("throws when --context specified but config is flat", async () => {
+			const configPath = join(FIXTURES_DIR, "valid.json");
+			expect(loadConfig({ configPath, context: "orgA" })).rejects.toThrow(
+				"--context flag was specified but the config file does not use the multi-context format",
+			);
+		});
+
+		test("throws when config has contexts but no --context provided", async () => {
+			const configPath = join(FIXTURES_DIR, "multi-context.json");
+			expect(loadConfig({ configPath })).rejects.toThrow(
+				"Config file contains multiple contexts. Use --context <name> to select one. Available contexts: orgA, orgB",
+			);
+		});
+
+		test("throws when --context name not found", async () => {
+			const configPath = join(FIXTURES_DIR, "multi-context.json");
+			expect(loadConfig({ configPath, context: "foo" })).rejects.toThrow(
+				'Context "foo" not found. Available contexts: orgA, orgB',
+			);
+		});
+
+		test("LINEAR_API_KEY env var overrides selected context's apiKey", async () => {
+			process.env.LINEAR_API_KEY = "lin_api_from_env_override";
+			const configPath = join(FIXTURES_DIR, "multi-context.json");
+			const config = await loadConfig({ configPath, context: "orgA" });
+
+			expect(config.apiKey).toBe("lin_api_from_env_override");
+		});
+
+		test("fills defaults for missing optional fields in context", async () => {
+			const configPath = join(FIXTURES_DIR, "multi-context-minimal.json");
+			const config = await loadConfig({ configPath, context: "dev" });
+
+			expect(config.apiKey).toBe("lin_api_dev_minimal");
+			expect(config.defaultTeam).toBeNull();
+			expect(config.defaultProject).toBeNull();
+			expect(config.defaultLabels).toEqual([]);
+		});
+
+		test("flat config still works without --context (regression)", async () => {
+			const configPath = join(FIXTURES_DIR, "valid.json");
+			const config = await loadConfig({ configPath });
+
+			expect(config.apiKey).toBe("lin_api_test1234567890abcdef");
+			expect(config.defaultTeam).toBe("Engineering");
+		});
+	});
 });

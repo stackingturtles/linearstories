@@ -1,0 +1,12 @@
+{
+	"contexts": [
+		{
+			"name": "dev",
+			"apiKey": "lin_api_dev_minimal"
+		},
+		{
+			"name": "prod",
+			"apiKey": "lin_api_prod_minimal"
+		}
+	]
+}
