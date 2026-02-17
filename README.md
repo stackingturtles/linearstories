@@ -17,17 +17,23 @@ AI coding agents -- Claude Code, Cursor, Copilot Workspace, and others -- perfor
 
 ### 1. Install
 
-Download the compiled binary for your platform from the releases page, or build from source:
+Run directly with `bunx` (no install required):
+
+```bash
+bunx linearstories import stories/*.md
+```
+
+Or install globally:
+
+```bash
+bun install -g linearstories
+```
+
+Alternatively, download a compiled binary for your platform from the [releases page](https://github.com/stackingturtles/linearstories/releases), or build from source:
 
 ```bash
 bun install
 bun build src/cli/index.ts --compile --outfile linearstories
-```
-
-Or run directly with Bun during development:
-
-```bash
-bun run src/cli/index.ts <command>
 ```
 
 ### 2. Create a config file
@@ -686,4 +692,4 @@ tests/
 
 ## License
 
-See the repository for license information.
+MIT License. See [LICENSE](LICENSE) for details.
