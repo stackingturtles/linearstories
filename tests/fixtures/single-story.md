@@ -1,0 +1,26 @@
+---
+project: "Q1 2026 Release"
+team: "Engineering"
+---
+
+## As a user, I want to log in so that I can access my account
+
+```yaml
+linear_id:
+linear_url:
+priority: 2
+labels: [Feature, Auth]
+estimate: 3
+assignee: jane@company.com
+status: Backlog
+```
+
+User should be able to log in with their email and password.
+The system should support rate limiting after 5 failed attempts.
+
+### Acceptance Criteria
+
+- [ ] User can enter email and password on the login page
+- [ ] Invalid credentials show a clear error message
+- [ ] User is redirected to the dashboard on successful login
+- [ ] Account locks after 5 consecutive failed attempts

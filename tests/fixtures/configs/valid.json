@@ -1,0 +1,6 @@
+{
+	"apiKey": "lin_api_test1234567890abcdef",
+	"defaultTeam": "Engineering",
+	"defaultProject": "Q1 2026 Release",
+	"defaultLabels": ["User Story"]
+}

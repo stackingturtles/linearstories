@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="linearstories — CLI tool that imports and exports structured user stories with acceptance criteria to Linear. Built for AI agent developers and engineering managers." />
+  <meta name="robots" content="index, follow" />
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:title"       content="linearstories — User Stories with Real Acceptance Criteria" />
+  <meta property="og:description" content="Your AI agents are only as good as the instructions you give them. linearstories ensures every Linear task has clear, testable acceptance criteria." />
+  <meta property="og:url"         content="https://ijonas.github.io/linear-user-stories-cli/" />
+  <meta property="og:image"       content="https://ijonas.github.io/linear-user-stories-cli/og-image.png" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="linearstories CLI" />
+  <meta name="twitter:description" content="Structured user stories with acceptance criteria for Linear. Built for AI agents and engineering managers." />
+
+  <title>linearstories — Clear acceptance criteria for every Linear issue</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ============================
+     NAVIGATION
+=============================== -->
+<nav class="nav">
+  <div class="container nav-inner">
+    <a href="#" class="nav-logo">
+      <span class="nav-logo-mark">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 6h16M4 10h10M4 14h12M4 18h8" stroke="#fff" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        </svg>
+      </span>
+      linearstories
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="#problem">Problem</a></li>
+      <li><a href="#how-it-works">How it works</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#quick-start">Quick start</a></li>
+    </ul>
+
+    <div class="nav-cta">
+      <a href="https://github.com/ijonas/linear-user-stories-cli" class="btn-ghost" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+        </svg>
+        GitHub
+      </a>
+      <a href="#quick-start" class="btn-primary">Get started</a>
+    </div>
+  </div>
+</nav>
+
+
+<!-- ============================
+     HERO
+=============================== -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-eyebrow">
+      <span class="hero-eyebrow-dot"></span>
+      Built for AI agents and engineering teams
+    </div>
+
+    <h1>
+      User stories with
+      <span class="gradient-text">real acceptance criteria</span>
+    </h1>
+
+    <p class="hero-sub">
+      Your AI agents are only as good as the instructions you give them.
+      <strong>linearstories</strong> ensures every Linear task has clear,
+      testable acceptance criteria — so agents know exactly what "done" looks like.
+    </p>
+
+    <div class="hero-actions">
+      <a href="#quick-start" class="btn-primary btn-large">Get started</a>
+      <a href="https://github.com/ijonas/linear-user-stories-cli/releases" class="btn-ghost btn-large" target="_blank" rel="noopener">
+        Download binary
+      </a>
+    </div>
+
+    <div class="hero-install">
+      <span class="hero-install-label">$</span>
+      <code>npm install -g linearstories</code>
+      <button class="copy-btn" onclick="navigator.clipboard.writeText('npm install -g linearstories')" title="Copy to clipboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div class="hero-social-proof">
+      <span>
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+        Open source on GitHub
+      </span>
+      <span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+        MIT License
+      </span>
+      <span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+        Cross-platform binaries
+      </span>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+
+<!-- ============================
+     PROBLEM
+=============================== -->
+<section class="problem" id="problem">
+  <div class="container problem-inner">
+
+    <div class="problem-content">
+      <span class="section-label">The problem</span>
+      <h2 class="section-heading">AI agents fail when requirements are vague</h2>
+      <p class="section-sub">
+        Autonomous agents thrive on precision. When a task says "build the login page"
+        with no acceptance criteria, agents guess — and they guess wrong. The result
+        is wasted compute, broken deployments, and review cycles that defeat the
+        purpose of automation.
+      </p>
+
+      <ul class="problem-points">
+        <li>Agents produce code that technically compiles but misses the intent</li>
+        <li>No definition of "done" means no reliable way to verify output</li>
+        <li>Vague Linear issues create ambiguity that compounds across sprints</li>
+        <li>Engineering managers lose visibility into what was actually built</li>
+      </ul>
+    </div>
+
+    <div class="problem-illustration">
+      <div class="msg-bubble msg-agent">
+        <span class="msg-bubble-label">Agent</span>
+        <p>What should I build for the login feature?</p>
+      </div>
+      <div class="msg-bubble msg-vague">
+        <span class="msg-bubble-label">Linear issue</span>
+        <p>Build the login page. Make it nice.</p>
+      </div>
+      <div class="msg-bubble msg-confused">
+        <span class="msg-bubble-label">Agent</span>
+        <p>I built something. I am not sure if it is correct. There were no acceptance criteria. Should I use OAuth? Email and password? SSO? I guessed email and password. Also I was not sure where to redirect after login so I redirected to /home. Let me know if this is wrong.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider" />
+
+
+<!-- ============================
+     SOLUTION
+=============================== -->
+<section class="solution" id="solution">
+  <div class="container solution-inner">
+
+    <div class="solution-card">
+      <div class="solution-card-header">
+        <span class="traffic-dot red"></span>
+        <span class="traffic-dot amber"></span>
+        <span class="traffic-dot green"></span>
+        <span class="solution-card-filename">stories.md</span>
+      </div>
+      <div class="solution-card-body">
+        <pre><span class="tok-heading">## As a user, I want to log in</span>
+<span class="tok-heading">## so that I can access my account</span>
+
+<span class="tok-key">### Acceptance Criteria</span>
+
+<span class="tok-checked">- [ ]</span> User can enter email and password
+<span class="tok-checked">- [ ]</span> Invalid credentials show an error message
+<span class="tok-checked">- [ ]</span> Success redirects to /dashboard
+<span class="tok-checked">- [ ]</span> Session persists across browser tabs
+<span class="tok-checked">- [ ]</span> Rate limiting after 5 failed attempts</pre>
+      </div>
+    </div>
+
+    <div class="solution-content">
+      <span class="section-label">The solution</span>
+      <h2 class="section-heading">Structured user stories with testable acceptance criteria</h2>
+      <p class="section-sub">
+        linearstories brings the user story format to Linear. Write your
+        stories in Markdown with explicit acceptance criteria, then import
+        them directly into your board. Agents read the AC, build to spec,
+        and know exactly when they are finished.
+      </p>
+      <ul class="solution-list">
+        <li>Every issue carries machine-readable acceptance criteria</li>
+        <li>Agents verify their own output against a clear checklist</li>
+        <li>Managers export Linear issues back to Markdown for documentation</li>
+        <li>Bi-directional sync keeps stories and tickets in lock-step</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider" />
+
+
+<!-- ============================
+     HOW IT WORKS
+=============================== -->
+<section class="how" id="how-it-works">
+  <div class="container">
+
+    <div class="how-heading-wrap">
+      <span class="section-label">How it works</span>
+      <h2 class="section-heading">Three steps from story to shipped</h2>
+      <p class="section-sub">
+        Write structured Markdown, push it to Linear, and give your agents
+        a precise target to build toward.
+      </p>
+    </div>
+
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </div>
+        <h3>Write Markdown stories</h3>
+        <p>
+          Author user stories in a structured Markdown template. Each story
+          includes metadata, a description, and a clear acceptance criteria
+          checklist.
+        </p>
+      </div>
+
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 16 12 12 8 16"></polyline>
+            <line x1="12" y1="12" x2="12" y2="21"></line>
+            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+          </svg>
+        </div>
+        <h3>Import to Linear</h3>
+        <p>
+          Run <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">linearstories import</code>
+          to push every story as a properly structured Linear issue, complete
+          with labels, priority, estimates, and assignees.
+        </p>
+      </div>
+
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <h3>Agents build with clarity</h3>
+        <p>
+          AI agents pick up tasks from Linear with full context: the user
+          story, acceptance criteria, and definition of done. No guesswork.
+          No wasted iterations.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+
+<!-- ============================
+     FEATURES
+=============================== -->
+<section class="features" id="features">
+  <div class="container">
+
+    <div style="margin-bottom: var(--space-12)">
+      <span class="section-label">Features</span>
+      <h2 class="section-heading">Everything your workflow needs</h2>
+      <p class="section-sub">
+        From solo engineers to multi-team orgs, linearstories covers the full
+        lifecycle of a user story.
+      </p>
+    </div>
+
+    <div class="features-inner">
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="16 16 12 12 8 16"></polyline>
+            <line x1="12" y1="12" x2="12" y2="21"></line>
+            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+          </svg>
+        </div>
+        <h3>Import to Linear</h3>
+        <p>
+          Push Markdown user stories directly into Linear as properly formatted
+          issues. Labels, priority, estimates, and assignees are all set
+          automatically from frontmatter.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="8 8 12 4 16 8"></polyline>
+            <line x1="12" y1="4" x2="12" y2="13"></line>
+            <line x1="3" y1="20" x2="21" y2="20"></line>
+          </svg>
+        </div>
+        <h3>Export from Linear</h3>
+        <p>
+          Pull any project or team's issues back into Markdown. Ideal for
+          documentation, audits, and sharing context with stakeholders who
+          do not live in Linear.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <polyline points="23 20 23 14 17 14"></polyline>
+            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+          </svg>
+        </div>
+        <h3>Bi-directional sync</h3>
+        <p>
+          Stories updated in Linear flow back to Markdown. Changes in your
+          editor push back to Linear. Keep your source of truth wherever
+          your team prefers.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        <h3>Multi-org support</h3>
+        <p>
+          Manage multiple Linear workspaces from a single configuration file.
+          Switch between orgs with a flag, or route specific files to specific
+          teams automatically.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+        </div>
+        <h3>Cross-platform binaries</h3>
+        <p>
+          Pre-built binaries for macOS (Apple Silicon and Intel), Linux, and
+          Windows. No Node.js required. Download and run, or install via npm.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="9 11 12 14 22 4"></polyline>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+          </svg>
+        </div>
+        <h3>Acceptance criteria first</h3>
+        <p>
+          Every story template enforces a structured AC checklist. Your agents
+          get a verifiable definition of done. Your reviewers get a clear audit
+          trail of what was specified.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+
+<!-- ============================
+     MARKDOWN FORMAT SHOWCASE
+=============================== -->
+<section class="showcase" id="format">
+  <div class="container showcase-inner">
+
+    <div class="showcase-content">
+      <span class="section-label">Template format</span>
+      <h2 class="section-heading">One file, everything Linear needs</h2>
+      <p class="section-sub">
+        A single Markdown file can contain multiple user stories. Frontmatter
+        sets project-level defaults; each story overrides what it needs.
+      </p>
+
+      <div class="template-fields">
+
+        <div class="template-field">
+          <span class="template-field-key">project</span>
+          <span class="template-field-desc">Maps to a Linear project. Creates it if it does not exist.</span>
+        </div>
+
+        <div class="template-field">
+          <span class="template-field-key">team</span>
+          <span class="template-field-desc">Target Linear team. Used to scope labels and workflows.</span>
+        </div>
+
+        <div class="template-field">
+          <span class="template-field-key">priority</span>
+          <span class="template-field-desc">0 = None, 1 = Urgent, 2 = High, 3 = Normal, 4 = Low.</span>
+        </div>
+
+        <div class="template-field">
+          <span class="template-field-key">labels</span>
+          <span class="template-field-desc">Array of Linear label names to apply to the issue.</span>
+        </div>
+
+        <div class="template-field">
+          <span class="template-field-key">estimate</span>
+          <span class="template-field-desc">Story points. Must match your team's estimation scale.</span>
+        </div>
+
+        <div class="template-field">
+          <span class="template-field-key">assignee</span>
+          <span class="template-field-desc">Email address of the Linear workspace member.</span>
+        </div>
+
+        <div class="template-field">
+          <span class="template-field-key">status</span>
+          <span class="template-field-desc">Maps to a Linear workflow state: Backlog, In Progress, Done, etc.</span>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="code-window">
+      <div class="code-window-header">
+        <span class="traffic-dot red"></span>
+        <span class="traffic-dot amber"></span>
+        <span class="traffic-dot green"></span>
+        <span class="code-window-title">stories/q1-2026.md</span>
+      </div>
+      <div class="code-window-body">
+        <pre><span class="tok-comment">---</span>
+<span class="tok-key">project</span>: <span class="tok-string">"Q1 2026 Release"</span>
+<span class="tok-key">team</span>: <span class="tok-string">"Engineering"</span>
+<span class="tok-comment">---</span>
+
+<span class="tok-heading">## As a user, I want to log in so that</span>
+<span class="tok-heading">## I can access my account</span>
+
+<span class="tok-comment">```yaml</span>
+<span class="tok-key">linear_id</span>:
+<span class="tok-key">linear_url</span>:
+<span class="tok-key">priority</span>: <span class="tok-number">2</span>
+<span class="tok-key">labels</span>: <span class="tok-bracket">[</span><span class="tok-string">Feature</span>, <span class="tok-string">Auth</span><span class="tok-bracket">]</span>
+<span class="tok-key">estimate</span>: <span class="tok-number">3</span>
+<span class="tok-key">assignee</span>: <span class="tok-string">jane@company.com</span>
+<span class="tok-key">status</span>: <span class="tok-string">Backlog</span>
+<span class="tok-comment">```</span>
+
+User should be able to log in with their
+email and password.
+
+<span class="tok-key">### Acceptance Criteria</span>
+
+<span class="tok-check">- [ ]</span> User can enter email and password
+<span class="tok-check">- [ ]</span> Invalid credentials show a clear error
+<span class="tok-check">- [ ]</span> Success redirects to the dashboard
+</pre>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider" />
+
+
+<!-- ============================
+     QUICK START
+=============================== -->
+<section class="quickstart" id="quick-start">
+  <div class="container quickstart-inner">
+
+    <div class="quickstart-content">
+      <span class="section-label">Quick start</span>
+      <h2 class="section-heading">Four commands to your first import</h2>
+      <p class="section-sub">
+        Get from zero to a fully populated Linear board in under five minutes.
+        No configuration file needed for a basic setup — just your API key.
+      </p>
+
+      <div class="quickstart-tips">
+        <div class="tip">
+          <strong>Linear API key</strong>
+          Generate a personal API key at
+          <code>linear.app/settings/api</code>.
+          Set it as <code>LINEAR_API_KEY</code> in your environment or
+          pass it with the <code>--token</code> flag.
+        </div>
+        <div class="tip">
+          <strong>Binary users</strong>
+          Download the binary for your platform from
+          <code>github.com/ijonas/linear-user-stories-cli/releases</code>
+          and place it on your PATH. The commands are identical.
+        </div>
+        <div class="tip">
+          <strong>Dry run first</strong>
+          Add the <code>--dry-run</code> flag to any import command to
+          preview what would be created in Linear without making any changes.
+        </div>
+      </div>
+    </div>
+
+    <div class="terminal">
+      <div class="terminal-header">
+        <span class="traffic-dot red"></span>
+        <span class="traffic-dot amber"></span>
+        <span class="traffic-dot green"></span>
+        <span class="terminal-title">bash</span>
+      </div>
+      <div class="terminal-body">
+        <span class="t-line">
+          <span class="t-comment"># 1. Install globally via npm</span>
+        </span>
+        <span class="t-line">
+          <span class="t-prompt">$ </span><span class="t-cmd">npm install -g linearstories</span>
+        </span>
+        <span class="t-line t-out">+ linearstories@1.0.0</span>
+        <br />
+
+        <span class="t-line">
+          <span class="t-comment"># 2. Set your Linear API key</span>
+        </span>
+        <span class="t-line">
+          <span class="t-prompt">$ </span><span class="t-cmd">export LINEAR_API_KEY=lin_api_xxxx</span>
+        </span>
+        <br />
+
+        <span class="t-line">
+          <span class="t-comment"># 3. Create a stories file (or use your own)</span>
+        </span>
+        <span class="t-line">
+          <span class="t-prompt">$ </span><span class="t-cmd">linearstories init stories.md</span>
+        </span>
+        <span class="t-line t-out">Created stories.md with example template</span>
+        <br />
+
+        <span class="t-line">
+          <span class="t-comment"># 4. Import into Linear</span>
+        </span>
+        <span class="t-line">
+          <span class="t-prompt">$ </span><span class="t-cmd">linearstories import stories.md</span>
+        </span>
+        <span class="t-line t-out">Parsing stories.md...</span>
+        <span class="t-line t-out">Found 3 user stories</span>
+        <span class="t-line t-out">Importing to project "Q1 2026 Release"...</span>
+        <span class="t-line t-success">Done. 3 issues created in Linear.</span>
+        <br />
+
+        <span class="t-line">
+          <span class="t-comment"># Export existing issues back to Markdown</span>
+        </span>
+        <span class="t-line">
+          <span class="t-prompt">$ </span><span class="t-cmd">linearstories export --project "Q1 2026 Release"</span>
+        </span>
+        <span class="t-line t-success">Exported 3 issues to q1-2026-release.md</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider" />
+
+
+<!-- ============================
+     FOOTER
+=============================== -->
+<footer class="footer">
+  <div class="container footer-inner">
+
+    <div class="footer-brand">
+      <a href="#" class="footer-brand-name">
+        <span class="nav-logo-mark">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 6h16M4 10h10M4 14h12M4 18h8" stroke="#fff" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          </svg>
+        </span>
+        linearstories
+      </a>
+      <span class="footer-tagline">Clear acceptance criteria for every Linear issue.</span>
+    </div>
+
+    <ul class="footer-links">
+      <li><a href="https://github.com/ijonas/linear-user-stories-cli" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="https://github.com/ijonas/linear-user-stories-cli/releases" target="_blank" rel="noopener">Releases</a></li>
+      <li><a href="https://github.com/ijonas/linear-user-stories-cli/issues" target="_blank" rel="noopener">Issues</a></li>
+      <li><a href="https://github.com/ijonas/linear-user-stories-cli/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a></li>
+    </ul>
+
+    <div class="footer-meta">
+      <div>Released under the MIT License.</div>
+      <div>Built for the Linear ecosystem.</div>
+    </div>
+
+  </div>
+</footer>
+
+</body>
+</html>
