@@ -39,7 +39,7 @@ jobs:
         run: bun build src/cli/index.ts --compile --target ${{ matrix.target }} --outfile linearstories-${{ matrix.target }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: linearstories-${{ matrix.target }}
           path: linearstories-${{ matrix.target }}*
