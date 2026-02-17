@@ -262,19 +262,54 @@ export LINEAR_API_KEY=lin_api_xxxxxxxxxxxxxxxxxxxx
 linearstories import stories/*.md
 ```
 
-### Multi-org setup
+### Multi-context config
 
-If you work across multiple Linear organizations, use separate config files and pass the appropriate one with `--config`:
+If you work across multiple Linear organizations or environments, you can define named contexts in a single config file:
 
-```bash
-# Org A
-linearstories import --config ~/.config/linearstories/org-a.json stories/*.md
-
-# Org B
-linearstories import --config ~/.config/linearstories/org-b.json stories/*.md
+```json
+{
+  "contexts": [
+    {
+      "name": "orgA",
+      "apiKey": "lin_api_orgA_xxxxxxxxxxxx",
+      "defaultTeam": "Engineering",
+      "defaultProject": "Q1 2026 Release",
+      "defaultLabels": ["User Story"]
+    },
+    {
+      "name": "orgB",
+      "apiKey": "lin_api_orgB_xxxxxxxxxxxx",
+      "defaultTeam": "Design",
+      "defaultProject": "Brand Refresh",
+      "defaultLabels": ["Design Task"]
+    }
+  ]
+}
 ```
 
-Alternatively, switch the `LINEAR_API_KEY` environment variable between commands.
+Select a context with the `--context` flag:
+
+```bash
+# Use orgA context
+linearstories import --context orgA stories/*.md
+
+# Use orgB context
+linearstories export --context orgB -o design-stories.md
+```
+
+Each context entry supports the same fields as the flat config (`apiKey`, `defaultTeam`, `defaultProject`, `defaultLabels`) plus a required `name`. Only `name` is required per entry; other fields are optional.
+
+If a multi-context config is detected and no `--context` flag is provided, the CLI prints the available context names and exits with an error.
+
+The `LINEAR_API_KEY` environment variable still takes precedence over the selected context's `apiKey`.
+
+The flat config format continues to work unchanged -- no migration is needed unless you want multi-context support.
+
+Alternatively, you can use separate config files and pass the appropriate one with `--config`:
+
+```bash
+linearstories import --config ~/.config/linearstories/org-a.json stories/*.md
+```
 
 ## CLI reference
 
@@ -297,6 +332,7 @@ linearstories import <files...> [options]
 | Flag                       | Description                                                           |
 |--------------------------- |---------------------------------------------------------------------- |
 | `-c, --config <path>`      | Path to a config file                                                |
+| `--context <name>`         | Select a named context from a multi-context config                   |
 | `-t, --team <name>`        | Override the default team                                            |
 | `-p, --project <name>`     | Override the default project                                         |
 | `--dry-run`                | Validate and parse without making any Linear API calls               |
@@ -337,6 +373,7 @@ linearstories export [options]
 | Flag                       | Description                                              | Default                 |
 |--------------------------- |--------------------------------------------------------- |------------------------ |
 | `-c, --config <path>`      | Path to a config file                                   |                         |
+| `--context <name>`         | Select a named context from a multi-context config      |                         |
 | `-t, --team <name>`        | Override the default team                               |                         |
 | `-o, --output <file>`      | Output file path                                        | `./exported-stories.md` |
 | `-p, --project <name>`     | Filter by project name                                  |                         |

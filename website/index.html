@@ -361,11 +361,11 @@
             <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
           </svg>
         </div>
-        <h3>Multi-org support</h3>
+        <h3>Multi-org contexts</h3>
         <p>
-          Manage multiple Linear workspaces from a single configuration file.
-          Switch between orgs with a flag, or route specific files to specific
-          teams automatically.
+          Define named contexts for each Linear organization in a single config
+          file. Switch between them with <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">--context orgA</code> — each
+          context carries its own API key, default team, and project.
         </p>
       </div>
 
@@ -593,6 +593,15 @@ email and password.
           <span class="t-prompt">$ </span><span class="t-cmd">linearstories export --project "Q1 2026 Release"</span>
         </span>
         <span class="t-line t-success">Exported 3 issues to q1-2026-release.md</span>
+        <br />
+
+        <span class="t-line">
+          <span class="t-comment"># Multi-org: import using a named context</span>
+        </span>
+        <span class="t-line">
+          <span class="t-prompt">$ </span><span class="t-cmd">linearstories import --context orgB stories.md</span>
+        </span>
+        <span class="t-line t-success">Done. 3 issues created in Linear (orgB).</span>
       </div>
     </div>
 
