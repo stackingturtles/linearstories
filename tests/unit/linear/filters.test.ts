@@ -16,7 +16,8 @@ describe("buildIssueFilter", () => {
 			identifiers: ["ENG-42", "ENG-43"],
 		});
 		expect(filter).toEqual({
-			identifier: { in: ["ENG-42", "ENG-43"] },
+			number: { in: [42, 43] },
+			team: { key: { eq: "ENG" } },
 		});
 	});
 
@@ -71,7 +72,8 @@ describe("buildIssueFilter", () => {
 
 		expect(filter).toEqual({
 			project: { id: { eq: PROJECT_ID } },
-			identifier: { in: ["ENG-42"] },
+			number: { in: [42] },
+			team: { key: { eq: "ENG" } },
 			state: { name: { eqIgnoreCase: "Todo" } },
 			assignee: { email: { eq: "jane@co.com" } },
 			creator: { email: { eq: "bob@co.com" } },

@@ -19,7 +19,25 @@ export function buildIssueFilter(input: IssueFilterInput): Record<string, unknow
 	}
 
 	if (input.identifiers && input.identifiers.length > 0) {
-		filter.identifier = { in: input.identifiers };
+		// Linear API doesn't support filtering by identifier directly.
+		// Parse "TEAM-123" into number + team key filters.
+		const numbers: number[] = [];
+		const teamKeys = new Set<string>();
+
+		for (const id of input.identifiers) {
+			const match = id.match(/^([A-Za-z]+)-(\d+)$/);
+			if (match) {
+				teamKeys.add(match[1].toUpperCase());
+				numbers.push(Number.parseInt(match[2], 10));
+			}
+		}
+
+		if (numbers.length > 0) {
+			filter.number = { in: numbers };
+		}
+		if (teamKeys.size === 1) {
+			filter.team = { key: { eq: [...teamKeys][0] } };
+		}
 	}
 
 	if (input.statusName) {
