@@ -12,34 +12,35 @@
 
 :root {
   /* Color palette */
-  --bg-base:       #0d0f14;
-  --bg-surface:    #13161e;
-  --bg-raised:     #1a1e28;
-  --bg-overlay:    #1f2434;
+  --bg-base:       #0a0d12;
+  --bg-surface:    #0f1218;
+  --bg-raised:     #161a24;
+  --bg-overlay:    #1c2130;
 
-  --border-subtle: rgba(255, 255, 255, 0.07);
-  --border-muted:  rgba(255, 255, 255, 0.12);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-muted:  rgba(255, 255, 255, 0.1);
 
-  --accent-start:  #5b6ef5;
-  --accent-end:    #9b5cf6;
-  --accent-mid:    #7b68f5;
+  --accent-start:  #3b82f6;
+  --accent-end:    #06b6d4;
+  --accent-mid:    #0ea5e9;
 
-  --text-primary:   #eef0f6;
-  --text-secondary: #8b90a7;
-  --text-muted:     #545870;
+  --text-primary:   #f0f2f8;
+  --text-secondary: #8892a8;
+  --text-muted:     #4a5168;
 
-  --code-bg:       #111520;
-  --code-border:   rgba(91, 110, 245, 0.2);
+  --code-bg:       #0c1018;
+  --code-border:   rgba(14, 165, 233, 0.2);
 
   --green:  #34d399;
   --amber:  #fbbf24;
   --red:    #f87171;
 
   /* Typography */
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-               Arial, sans-serif, "Apple Color Emoji";
-  --font-mono: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono",
-               "Courier New", monospace;
+  --font-display: "Instrument Serif", Georgia, "Times New Roman", serif;
+  --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+               sans-serif, "Apple Color Emoji";
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Monaco, Consolas,
+               monospace;
 
   /* Spacing scale */
   --space-1:  0.25rem;
@@ -101,8 +102,8 @@ body {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--accent-mid);
-  background: rgba(91, 110, 245, 0.1);
-  border: 1px solid rgba(91, 110, 245, 0.25);
+  background: rgba(14, 165, 233, 0.1);
+  border: 1px solid rgba(14, 165, 233, 0.25);
   padding: var(--space-1) var(--space-3);
   border-radius: 100px;
   margin-bottom: var(--space-4);
@@ -250,8 +251,9 @@ hr.divider {
 }
 
 .btn-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
+  opacity: 0.92;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(14, 165, 233, 0.2), 0 2px 8px rgba(14, 165, 233, 0.15);
 }
 
 /* ----- Hero ----- */
@@ -268,8 +270,9 @@ hr.divider {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(91, 110, 245, 0.12) 0%, transparent 70%),
-    radial-gradient(ellipse 40% 30% at 80% 20%, rgba(155, 92, 246, 0.08) 0%, transparent 60%);
+    radial-gradient(ellipse 70% 50% at 50% -5%, rgba(14, 165, 233, 0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 30% 10%, rgba(59, 130, 246, 0.1) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 75% 15%, rgba(6, 182, 212, 0.08) 0%, transparent 60%);
   pointer-events: none;
 }
 
@@ -296,13 +299,16 @@ hr.divider {
 }
 
 .hero h1 {
-  font-size: clamp(2.4rem, 6vw, 4rem);
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 7vw, 4.8rem);
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
   margin-bottom: var(--space-6);
   max-width: 18ch;
   margin-inline: auto;
+  position: relative;
 }
 
 .hero-sub {
@@ -337,6 +343,12 @@ hr.divider {
   padding: var(--space-4) var(--space-6);
   font-size: 0.9rem;
   max-width: 100%;
+  box-shadow: 0 0 60px rgba(14, 165, 233, 0.06), 0 0 0 1px rgba(14, 165, 233, 0.12);
+  transition: box-shadow 0.3s ease;
+}
+
+.hero-install:hover {
+  box-shadow: 0 0 80px rgba(14, 165, 233, 0.1), 0 0 0 1px rgba(14, 165, 233, 0.2);
 }
 
 .hero-install code {
@@ -664,8 +676,8 @@ hr.divider {
 .step-icon {
   width: 44px;
   height: 44px;
-  background: rgba(91, 110, 245, 0.12);
-  border: 1px solid rgba(91, 110, 245, 0.25);
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(14, 165, 233, 0.25);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -713,8 +725,9 @@ hr.divider {
 }
 
 .feature-card:hover {
-  border-color: var(--border-muted);
-  transform: translateY(-2px);
+  border-color: rgba(14, 165, 233, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(14, 165, 233, 0.08);
 }
 
 .feature-icon {
@@ -725,8 +738,8 @@ hr.divider {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: rgba(91, 110, 245, 0.1);
-  border: 1px solid rgba(91, 110, 245, 0.2);
+  background: rgba(14, 165, 233, 0.1);
+  border: 1px solid rgba(14, 165, 233, 0.2);
 }
 
 .feature-icon svg {
@@ -784,8 +797,8 @@ hr.divider {
   font-family: var(--font-mono);
   font-size: 0.78rem;
   color: var(--accent-mid);
-  background: rgba(91, 110, 245, 0.08);
-  border: 1px solid rgba(91, 110, 245, 0.2);
+  background: rgba(14, 165, 233, 0.08);
+  border: 1px solid rgba(14, 165, 233, 0.2);
   padding: 2px 8px;
   border-radius: 4px;
   white-space: nowrap;
@@ -1022,6 +1035,82 @@ hr.divider {
   line-height: 1.7;
 }
 
+/* ----- Grain Overlay ----- */
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+  opacity: 0.028;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px;
+}
+
+/* ----- Hero Entrance Animation ----- */
+
+@keyframes hero-enter {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero .hero-eyebrow,
+.hero h1,
+.hero .hero-sub,
+.hero .hero-actions,
+.hero .hero-install,
+.hero .hero-social-proof {
+  opacity: 0;
+  animation: hero-enter 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.hero .hero-eyebrow   { animation-delay: 0ms; }
+.hero h1              { animation-delay: 120ms; }
+.hero .hero-sub       { animation-delay: 240ms; }
+.hero .hero-actions   { animation-delay: 360ms; }
+.hero .hero-install   { animation-delay: 480ms; }
+.hero .hero-social-proof { animation-delay: 600ms; }
+
+/* ----- Scroll Reveal Animation ----- */
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(36px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal {
+  opacity: 0;
+}
+
+.reveal.revealed {
+  animation: reveal-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Stagger children inside revealed containers */
+.reveal.revealed .step:nth-child(1),
+.reveal.revealed .feature-card:nth-child(1) { animation: reveal-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0ms forwards; opacity: 0; }
+.reveal.revealed .step:nth-child(2),
+.reveal.revealed .feature-card:nth-child(2) { animation: reveal-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) 100ms forwards; opacity: 0; }
+.reveal.revealed .step:nth-child(3),
+.reveal.revealed .feature-card:nth-child(3) { animation: reveal-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) 200ms forwards; opacity: 0; }
+.reveal.revealed .feature-card:nth-child(4) { animation: reveal-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) 300ms forwards; opacity: 0; }
+.reveal.revealed .feature-card:nth-child(5) { animation: reveal-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) 400ms forwards; opacity: 0; }
+.reveal.revealed .feature-card:nth-child(6) { animation: reveal-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) 500ms forwards; opacity: 0; }
+
 /* ----- Responsive ----- */
 
 @media (max-width: 900px) {
@@ -1076,7 +1165,7 @@ hr.divider {
   }
 
   .hero h1 {
-    font-size: 2.2rem;
+    font-size: 2.5rem;
   }
 
   .hero-install {
@@ -1115,6 +1204,6 @@ hr.divider {
 /* ----- Selection ----- */
 
 ::selection {
-  background: rgba(91, 110, 245, 0.3);
-  color: var(--text-primary);
+  background: rgba(14, 165, 233, 0.35);
+  color: #fff;
 }
