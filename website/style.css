@@ -247,6 +247,7 @@ hr.divider {
   text-decoration: none;
   border: none;
   cursor: pointer;
+  white-space: nowrap;
   transition: opacity 0.15s, transform 0.15s;
 }
 
@@ -1155,6 +1156,15 @@ body::after {
 
   .nav-links {
     display: none;
+  }
+
+  .nav-cta {
+    gap: var(--space-2);
+  }
+
+  .nav-cta .btn-large {
+    padding: var(--space-2) var(--space-4);
+    font-size: 0.875rem;
   }
 }
 
