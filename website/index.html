@@ -46,6 +46,7 @@
       <li><a href="#problem">Problem</a></li>
       <li><a href="#how-it-works">How it works</a></li>
       <li><a href="#features">Features</a></li>
+      <li><a href="#quality-skill">Quality skill</a></li>
       <li><a href="#quick-start">Quick start</a></li>
     </ul>
 
@@ -412,6 +413,77 @@
 
 
 <!-- ============================
+     QUALITY SKILL
+=============================== -->
+<section class="quality-skill" id="quality-skill">
+  <div class="container quality-skill-inner reveal">
+
+    <div class="quality-skill-content">
+      <span class="section-label">Claude Code skill</span>
+      <h2 class="section-heading">Grade your acceptance criteria automatically</h2>
+      <p class="section-sub">
+        Run <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">/rate-userstories</code>
+        in Claude Code to evaluate every story in a markdown file. The skill scores
+        each story on specificity, testability, and completeness &mdash; then rewrites
+        any criteria that fail.
+      </p>
+
+      <div class="quality-dimensions">
+        <div class="quality-dim">
+          <span class="quality-dim-pct">35%</span>
+          <span class="quality-dim-label">Testability</span>
+          <span class="quality-dim-desc">Can a QA engineer write a pass/fail test?</span>
+        </div>
+        <div class="quality-dim">
+          <span class="quality-dim-pct">30%</span>
+          <span class="quality-dim-label">Specificity</span>
+          <span class="quality-dim-desc">Concrete values, not vague language</span>
+        </div>
+        <div class="quality-dim">
+          <span class="quality-dim-pct">25%</span>
+          <span class="quality-dim-label">Completeness</span>
+          <span class="quality-dim-desc">Edge cases, errors, and boundaries</span>
+        </div>
+        <div class="quality-dim">
+          <span class="quality-dim-pct">10%</span>
+          <span class="quality-dim-label">Description</span>
+          <span class="quality-dim-desc">Sufficient context for developers</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="terminal">
+      <div class="terminal-header">
+        <span class="traffic-dot red"></span>
+        <span class="traffic-dot amber"></span>
+        <span class="traffic-dot green"></span>
+        <span class="terminal-title">claude code</span>
+      </div>
+      <div class="terminal-body">
+        <span class="t-line">
+          <span class="t-prompt">$ </span><span class="t-cmd">/rate-userstories stories/q1-2026.md</span>
+        </span>
+        <br />
+        <span class="t-line t-out">| Story                      | Score | Result |</span>
+        <span class="t-line t-out">|----------------------------|-------|--------|</span>
+        <span class="t-line t-success">| Login flow                 |  92%  | PASS   |</span>
+        <span class="t-line t-success">| Password reset             |  88%  | PASS   |</span>
+        <span class="t-line" style="color:var(--amber)">| Dashboard layout           |  54%  | FAIL   |</span>
+        <br />
+        <span class="t-line t-out" style="font-size:0.72rem;">Flagged: "Dashboard should look clean"</span>
+        <span class="t-line t-out" style="font-size:0.72rem;">  Issue: Subjective UI language</span>
+        <span class="t-line t-success" style="font-size:0.72rem;">  Rewrite: "Dashboard uses 8px grid,</span>
+        <span class="t-line t-success" style="font-size:0.72rem;">  16px card padding per style guide"</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider" />
+
+
+<!-- ============================
      MARKDOWN FORMAT SHOWCASE
 =============================== -->
 <section class="showcase" id="format">
@@ -559,7 +631,7 @@ email and password.
         <span class="t-line">
           <span class="t-prompt">$ </span><span class="t-cmd">npm install -g linearstories</span>
         </span>
-        <span class="t-line t-out">+ linearstories@1.0.0</span>
+        <span class="t-line t-out">+ linearstories@1.1.0</span>
         <br />
 
         <span class="t-line">

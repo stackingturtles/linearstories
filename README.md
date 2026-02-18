@@ -588,6 +588,23 @@ linearstories import stories/current.md
 
 Because exported stories include `linear_id`, the re-import updates existing issues rather than creating new ones.
 
+## Claude Code skill: `/rate-userstories`
+
+linearstories ships with a built-in Claude Code skill that evaluates the quality of your acceptance criteria. Run it in any Claude Code session:
+
+```
+/rate-userstories stories/q1-2026.md
+```
+
+The skill reads your markdown file and produces a structured report:
+
+- **Scores each story 0-100%** across specificity, testability, completeness, and description quality
+- **Flags anti-patterns** like subjective language ("intuitive", "fast", "looks good") and ambiguous scope ("etc.", "as needed")
+- **Rewrites failing criteria** with concrete, testable alternatives
+- **Recommends a style guide** when UI/visual criteria are unverifiable
+
+Stories scoring below 80% get a detailed breakdown with suggested improvements. See [docs/RATE_USERSTORIES.md](docs/RATE_USERSTORIES.md) for full documentation.
+
 ## Building from source
 
 ### Prerequisites
@@ -685,6 +702,12 @@ src/
   errors.ts               Custom error classes
 templates/
   user-story.md           Example user story template
+docs/
+  USER_STORY_FORMAT.md    Markdown format reference
+  RATE_USERSTORIES.md     /rate-userstories skill documentation
+.claude/
+  commands/
+    rate-userstories.md   Claude Code skill for AC quality evaluation
 tests/
   unit/                   Unit tests
   integration/            Integration tests
