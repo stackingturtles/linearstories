@@ -11,11 +11,23 @@ function isEmail(value: string): boolean {
 	return value.includes("@");
 }
 
+interface ResolvedLabel {
+	id: string;
+	parentId: string | undefined;
+}
+
+export interface ResolvedEpicIssue {
+	id: string;
+	identifier: string;
+}
+
 export class Resolver {
 	private client: LinearClient;
 	private teamCache = new Map<string, string>();
 	private projectCache = new Map<string, string>();
-	private labelCache = new Map<string, string>();
+	private labelCache = new Map<string, ResolvedLabel>();
+	private groupNameCache = new Map<string, string>();
+	private epicIssueCache = new Map<string, ResolvedEpicIssue>();
 	private userCache = new Map<string, string | undefined>();
 	private stateCache = new Map<string, string | undefined>();
 
@@ -91,12 +103,12 @@ export class Resolver {
 			return [];
 		}
 
-		const ids: string[] = [];
+		const resolved: Array<{ name: string; label: ResolvedLabel }> = [];
 
 		for (const name of names) {
 			const cached = this.labelCache.get(name);
 			if (cached) {
-				ids.push(cached);
+				resolved.push({ name, label: cached });
 				continue;
 			}
 
@@ -110,11 +122,93 @@ export class Resolver {
 				continue;
 			}
 
-			this.labelCache.set(name, label.id);
+			const parentId = (label as unknown as { parentId?: string }).parentId;
+			const entry: ResolvedLabel = { id: label.id, parentId };
+			this.labelCache.set(name, entry);
+			resolved.push({ name, label: entry });
+		}
+
+		return this.filterGroupConflicts(resolved);
+	}
+
+	private async filterGroupConflicts(
+		resolved: Array<{ name: string; label: ResolvedLabel }>,
+	): Promise<string[]> {
+		const seenGroups = new Map<string, string>(); // groupId → first label name
+		const ids: string[] = [];
+
+		for (const { name, label } of resolved) {
+			if (label.parentId === undefined) {
+				ids.push(label.id);
+				continue;
+			}
+
+			const existing = seenGroups.get(label.parentId);
+			if (existing) {
+				const groupName = await this.resolveGroupName(label.parentId);
+				console.warn(
+					`Label "${name}" conflicts with "${existing}" (both in group "${groupName}"), skipping`,
+				);
+				continue;
+			}
+
+			seenGroups.set(label.parentId, name);
 			ids.push(label.id);
 		}
 
 		return ids;
+	}
+
+	private async resolveGroupName(parentId: string): Promise<string> {
+		const cached = this.groupNameCache.get(parentId);
+		if (cached) {
+			return cached;
+		}
+
+		try {
+			const parent = await this.client.issueLabel(parentId);
+			const name = parent.name;
+			this.groupNameCache.set(parentId, name);
+			return name;
+		} catch {
+			const fallback = "Unknown group";
+			this.groupNameCache.set(parentId, fallback);
+			return fallback;
+		}
+	}
+
+	/** Resolve an existing Linear issue and verify that it is a top-level epic. */
+	async resolveEpicIssue(reference: string): Promise<ResolvedEpicIssue> {
+		const cached = this.epicIssueCache.get(reference);
+		if (cached) {
+			return cached;
+		}
+
+		try {
+			const issue = await this.client.issue(reference);
+			const labels = await issue.labels();
+
+			if (!labels.nodes.some((label) => label.name === "Epic")) {
+				throw new ResolverError(`Referenced issue "${reference}" does not have the Epic label`);
+			}
+			if (issue.parentId) {
+				throw new ResolverError(
+					`Referenced epic "${reference}" already has a parent; only two hierarchy levels are supported`,
+				);
+			}
+
+			const resolved = { id: issue.id, identifier: issue.identifier };
+			this.epicIssueCache.set(reference, resolved);
+			this.epicIssueCache.set(issue.identifier, resolved);
+			return resolved;
+		} catch (error) {
+			if (error instanceof ResolverError) {
+				throw error;
+			}
+			throw new ResolverError(
+				`Epic issue not found: "${reference}" - ${error instanceof Error ? error.message : String(error)}`,
+			);
+		}
 	}
 
 	/**

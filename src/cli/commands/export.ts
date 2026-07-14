@@ -57,7 +57,7 @@ export function registerExportCommand(program: Command) {
 					outputPath: options.output,
 				});
 
-				console.log(chalk.green(`Exported ${result.count} stories to ${result.outputPath}`));
+				console.log(chalk.green(`Exported ${result.count} issues to ${result.outputPath}`));
 			} catch (error) {
 				handleError(error);
 			}

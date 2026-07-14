@@ -3,22 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="linearstories — CLI tool that imports and exports structured user stories with acceptance criteria to Linear. Built for AI agent developers and engineering managers." />
+  <meta name="description" content="linearstories imports and exports structured epics and user stories with native Linear sub-issue links and testable acceptance criteria." />
   <meta name="robots" content="index, follow" />
 
   <!-- Open Graph -->
   <meta property="og:type"        content="website" />
-  <meta property="og:title"       content="linearstories — User Stories with Real Acceptance Criteria" />
-  <meta property="og:description" content="Your AI agents are only as good as the instructions you give them. linearstories ensures every Linear task has clear, testable acceptance criteria." />
+  <meta property="og:title"       content="linearstories — Epics and User Stories for Linear" />
+  <meta property="og:description" content="Keep high-level goals in epics, implementation details in user stories, and native parent-child links in Linear." />
   <meta property="og:url"         content="https://linear-stories.vercel.app/" />
   <meta property="og:image"       content="https://linear-stories.vercel.app/og-image.png" />
 
   <!-- Twitter Card -->
   <meta name="twitter:card"        content="summary_large_image" />
   <meta name="twitter:title"       content="linearstories CLI" />
-  <meta name="twitter:description" content="Structured user stories with acceptance criteria for Linear. Built for AI agents and engineering managers." />
+  <meta name="twitter:description" content="Structured epics and user stories with native Linear hierarchy and testable acceptance criteria." />
 
-  <title>linearstories — Clear acceptance criteria for every Linear issue</title>
+  <title>linearstories — Structured epics and user stories for Linear</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -79,9 +79,9 @@
     </h1>
 
     <p class="hero-sub">
-      Your AI agents are only as good as the instructions you give them.
-      <strong>linearstories</strong> ensures every Linear task has clear,
-      testable acceptance criteria — so agents know exactly what "done" looks like.
+      Keep product intent in epics and implementation detail in user stories.
+      <strong>linearstories</strong> preserves the hierarchy in Linear while giving
+      agents testable acceptance criteria for every story they build.
     </p>
 
     <div class="hero-actions">
@@ -181,33 +181,36 @@
         <span class="solution-card-filename">stories.md</span>
       </div>
       <div class="solution-card-body">
-        <pre><span class="tok-heading">## As a user, I want to log in</span>
-<span class="tok-heading">## so that I can access my account</span>
+        <pre><span class="tok-heading">## Account access</span>
+<span class="tok-string">labels: [Epic, Auth]</span>
+
+<span class="tok-key">### Why is this needed?</span>
+Users need secure access to protected features.
+
+<span class="tok-heading">## As a user, I want to log in</span>
+<span class="tok-string">epic: Account access</span>
 
 <span class="tok-key">### Acceptance Criteria</span>
 
 <span class="tok-checked">- [ ]</span> User can enter email and password
 <span class="tok-checked">- [ ]</span> Invalid credentials show an error message
-<span class="tok-checked">- [ ]</span> Success redirects to /dashboard
-<span class="tok-checked">- [ ]</span> Session persists across browser tabs
-<span class="tok-checked">- [ ]</span> Rate limiting after 5 failed attempts</pre>
+<span class="tok-checked">- [ ]</span> Success redirects to /dashboard</pre>
       </div>
     </div>
 
     <div class="solution-content">
       <span class="section-label">The solution</span>
-      <h2 class="section-heading">Structured user stories with testable acceptance criteria</h2>
+      <h2 class="section-heading">High-level intent, linked to testable work</h2>
       <p class="section-sub">
-        linearstories brings the user story format to Linear. Write your
-        stories in Markdown with explicit acceptance criteria, then import
-        them directly into your board. Agents read the AC, build to spec,
-        and know exactly when they are finished.
+        Write epics and user stories in one Markdown format, then import them
+        into Linear as native parent issues and sub-issues. Epics explain the
+        goal and rationale; stories give agents a precise definition of done.
       </p>
       <ul class="solution-list">
-        <li>Every issue carries machine-readable acceptance criteria</li>
+        <li>Epics capture the goal, scope, and why the work matters</li>
+        <li>User stories carry machine-readable acceptance criteria</li>
+        <li>Linear parent and sub-issue links preserve the hierarchy</li>
         <li>Agents verify their own output against a clear checklist</li>
-        <li>Managers export Linear issues back to Markdown for documentation</li>
-        <li>Bi-directional sync keeps stories and tickets in lock-step</li>
       </ul>
     </div>
 
@@ -225,10 +228,10 @@
 
     <div class="how-heading-wrap reveal">
       <span class="section-label">How it works</span>
-      <h2 class="section-heading">Three steps from story to shipped</h2>
+      <h2 class="section-heading">Three steps from goal to shipped</h2>
       <p class="section-sub">
-        Write structured Markdown, push it to Linear, and give your agents
-        a precise target to build toward.
+        Define the goal, decompose it into stories, and give agents a precise
+        target to build toward.
       </p>
     </div>
 
@@ -245,11 +248,11 @@
             <polyline points="10 9 9 9 8 9"></polyline>
           </svg>
         </div>
-        <h3>Write Markdown stories</h3>
+        <h3>Write epics and stories</h3>
         <p>
-          Author user stories in a structured Markdown template. Each story
-          includes metadata, a description, and a clear acceptance criteria
-          checklist.
+          Mark high-level issues with the <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">Epic</code>
+          label, explain why they matter, and link focused user stories through
+          the <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">epic</code> metadata field.
         </p>
       </div>
 
@@ -265,8 +268,8 @@
         <h3>Import to Linear</h3>
         <p>
           Run <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">linearstories import</code>
-          to push every story as a properly structured Linear issue, complete
-          with labels, priority, estimates, and assignees.
+          to create epics first, push every story as a native sub-issue, and set
+          labels, priority, estimates, and assignees.
         </p>
       </div>
 
@@ -280,8 +283,8 @@
         </div>
         <h3>Agents build with clarity</h3>
         <p>
-          AI agents pick up tasks from Linear with full context: the user
-          story, acceptance criteria, and definition of done. No guesswork.
+          AI agents pick up stories with the epic rationale, focused scope,
+          acceptance criteria, and definition of done. No guesswork.
           No wasted iterations.
         </p>
       </div>
@@ -304,7 +307,7 @@
       <h2 class="section-heading">Everything your workflow needs</h2>
       <p class="section-sub">
         From solo engineers to multi-team orgs, linearstories covers the full
-        lifecycle of a user story.
+        lifecycle from high-level goal to implementable user story.
       </p>
     </div>
 
@@ -320,9 +323,9 @@
         </div>
         <h3>Import to Linear</h3>
         <p>
-          Push Markdown user stories directly into Linear as properly formatted
-          issues. Labels, priority, estimates, and assignees are all set
-          automatically from frontmatter.
+          Push Markdown epics and user stories into Linear as parent issues and
+          sub-issues. Labels, priority, estimates, and assignees are all set
+          from metadata.
         </p>
       </div>
 
@@ -383,10 +386,11 @@
             <line x1="12" y1="17" x2="12" y2="21"></line>
           </svg>
         </div>
-        <h3>Cross-platform binaries</h3>
+        <h3>Epic hierarchy</h3>
         <p>
-          Pre-built binaries for macOS (Apple Silicon and Intel), Linux, and
-          Windows. Download and run, or install via <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">npm install -g linearstories</code>.
+          Create Epic-labelled parent issues and link user stories through
+          Linear's native sub-issue relationship. Local title references and
+          existing Linear identifiers are both supported.
         </p>
       </div>
 
@@ -399,7 +403,7 @@
         </div>
         <h3>Acceptance criteria first</h3>
         <p>
-          Every story template enforces a structured AC checklist. Your agents
+          Every user story enforces a structured AC checklist. Your agents
           get a verifiable definition of done. Your reviewers get a clear audit
           trail of what was specified.
         </p>
@@ -420,34 +424,34 @@
 
     <div class="quality-skill-content">
       <span class="section-label">Claude Code skill</span>
-      <h2 class="section-heading">Grade your acceptance criteria automatically</h2>
+      <h2 class="section-heading">Grade epics and stories automatically</h2>
       <p class="section-sub">
         Run <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">/rate-userstories</code>
-        in Claude Code to evaluate every story in a markdown file. The skill scores
-        each story on specificity, testability, and completeness &mdash; then rewrites
-        any criteria that fail.
+        in Claude Code to classify and evaluate every issue. Epics are scored on
+        goal, scope, and rationale; stories are scored on testable acceptance
+        criteria. Contradictions across the hierarchy hard-fail.
       </p>
 
       <div class="quality-dimensions">
         <div class="quality-dim">
-          <span class="quality-dim-pct">35%</span>
-          <span class="quality-dim-label">Testability</span>
-          <span class="quality-dim-desc">Can a QA engineer write a pass/fail test?</span>
+          <span class="quality-dim-pct">TYPE</span>
+          <span class="quality-dim-label">Classification</span>
+          <span class="quality-dim-desc">Epic label selects the correct rubric</span>
         </div>
         <div class="quality-dim">
           <span class="quality-dim-pct">30%</span>
-          <span class="quality-dim-label">Specificity</span>
-          <span class="quality-dim-desc">Concrete values, not vague language</span>
+          <span class="quality-dim-label">Epic rationale</span>
+          <span class="quality-dim-desc">Why is this needed?</span>
         </div>
         <div class="quality-dim">
-          <span class="quality-dim-pct">25%</span>
-          <span class="quality-dim-label">Completeness</span>
-          <span class="quality-dim-desc">Edge cases, errors, and boundaries</span>
+          <span class="quality-dim-pct">35%</span>
+          <span class="quality-dim-label">Story testability</span>
+          <span class="quality-dim-desc">Can QA write a pass/fail test?</span>
         </div>
         <div class="quality-dim">
-          <span class="quality-dim-pct">10%</span>
-          <span class="quality-dim-label">Description</span>
-          <span class="quality-dim-desc">Sufficient context for developers</span>
+          <span class="quality-dim-pct">FAIL</span>
+          <span class="quality-dim-label">Contradictions</span>
+          <span class="quality-dim-desc">Checked within and across issues</span>
         </div>
       </div>
     </div>
@@ -464,16 +468,15 @@
           <span class="t-prompt">$ </span><span class="t-cmd">/rate-userstories stories/q1-2026.md</span>
         </span>
         <br />
-        <span class="t-line t-out">| Story                      | Score | Result |</span>
-        <span class="t-line t-out">|----------------------------|-------|--------|</span>
-        <span class="t-line t-success">| Login flow                 |  92%  | PASS   |</span>
-        <span class="t-line t-success">| Password reset             |  88%  | PASS   |</span>
-        <span class="t-line" style="color:var(--amber)">| Dashboard layout           |  54%  | FAIL   |</span>
+        <span class="t-line t-out">| Issue            | Type  | Score | Result |</span>
+        <span class="t-line t-out">|------------------|-------|-------|--------|</span>
+        <span class="t-line t-success">| Account access   | Epic  |  92%  | PASS   |</span>
+        <span class="t-line t-success">| Login flow       | Story |  88%  | PASS   |</span>
+        <span class="t-line" style="color:var(--amber)">| Account recovery | Epic  |  68%  | FAIL   |</span>
         <br />
-        <span class="t-line t-out" style="font-size:0.72rem;">Flagged: "Dashboard should look clean"</span>
-        <span class="t-line t-out" style="font-size:0.72rem;">  Issue: Subjective UI language</span>
-        <span class="t-line t-success" style="font-size:0.72rem;">  Rewrite: "Dashboard uses 8px grid,</span>
-        <span class="t-line t-success" style="font-size:0.72rem;">  16px card padding per style guide"</span>
+        <span class="t-line t-out" style="font-size:0.72rem;">Flagged: Missing "Why is this needed?"</span>
+        <span class="t-line t-out" style="font-size:0.72rem;">  Rationale: 0/30</span>
+        <span class="t-line t-success" style="font-size:0.72rem;">  Replacement markdown proposed</span>
       </div>
     </div>
 
@@ -491,10 +494,10 @@
 
     <div class="showcase-content">
       <span class="section-label">Template format</span>
-      <h2 class="section-heading">One file, everything Linear needs</h2>
+      <h2 class="section-heading">One file, two levels of intent</h2>
       <p class="section-sub">
-        A single Markdown file can contain multiple user stories. Frontmatter
-        sets project-level defaults; each story overrides what it needs.
+        A single Markdown file can define epics and their user stories.
+        Frontmatter sets project defaults; per-issue metadata preserves hierarchy.
       </p>
 
       <div class="template-fields">
@@ -516,7 +519,12 @@
 
         <div class="template-field">
           <span class="template-field-key">labels</span>
-          <span class="template-field-desc">Array of Linear label names to apply to the issue.</span>
+          <span class="template-field-desc">The exact Epic label identifies a top-level epic.</span>
+        </div>
+
+        <div class="template-field">
+          <span class="template-field-key">epic</span>
+          <span class="template-field-desc">Parent Linear identifier or exact local epic title.</span>
         </div>
 
         <div class="template-field">
@@ -550,21 +558,27 @@
 <span class="tok-key">team</span>: <span class="tok-string">"Engineering"</span>
 <span class="tok-comment">---</span>
 
-<span class="tok-heading">## As a user, I want to log in so that</span>
-<span class="tok-heading">## I can access my account</span>
+<span class="tok-heading">## Account access</span>
 
 <span class="tok-comment">```yaml</span>
 <span class="tok-key">linear_id</span>:
 <span class="tok-key">linear_url</span>:
 <span class="tok-key">priority</span>: <span class="tok-number">2</span>
-<span class="tok-key">labels</span>: <span class="tok-bracket">[</span><span class="tok-string">Feature</span>, <span class="tok-string">Auth</span><span class="tok-bracket">]</span>
-<span class="tok-key">estimate</span>: <span class="tok-number">3</span>
-<span class="tok-key">assignee</span>: <span class="tok-string">jane@company.com</span>
-<span class="tok-key">status</span>: <span class="tok-string">Backlog</span>
+<span class="tok-key">labels</span>: <span class="tok-bracket">[</span><span class="tok-string">Epic</span>, <span class="tok-string">Auth</span><span class="tok-bracket">]</span>
 <span class="tok-comment">```</span>
 
-User should be able to log in with their
-email and password.
+Secure account access and recovery.
+
+<span class="tok-key">### Why is this needed?</span>
+
+Users need secure access to protected features.
+
+<span class="tok-heading">## As a user, I want to log in</span>
+
+<span class="tok-comment">```yaml</span>
+<span class="tok-key">epic</span>: <span class="tok-string">Account access</span>
+<span class="tok-key">labels</span>: <span class="tok-bracket">[</span><span class="tok-string">Feature</span>, <span class="tok-string">Auth</span><span class="tok-bracket">]</span>
+<span class="tok-comment">```</span>
 
 <span class="tok-key">### Acceptance Criteria</span>
 
@@ -631,7 +645,7 @@ email and password.
         <span class="t-line">
           <span class="t-prompt">$ </span><span class="t-cmd">npm install -g linearstories</span>
         </span>
-        <span class="t-line t-out">+ linearstories@1.1.0</span>
+        <span class="t-line t-out">+ linearstories@1.2.0</span>
         <br />
 
         <span class="t-line">
@@ -658,9 +672,9 @@ email and password.
           <span class="t-prompt">$ </span><span class="t-cmd">linearstories import stories.md</span>
         </span>
         <span class="t-line t-out">Parsing stories.md...</span>
-        <span class="t-line t-out">Found 3 user stories</span>
+        <span class="t-line t-out">Found 1 epic and 2 user stories</span>
         <span class="t-line t-out">Importing to project "Q1 2026 Release"...</span>
-        <span class="t-line t-success">Done. 3 issues created in Linear.</span>
+        <span class="t-line t-success">Done. 3 issues created, 2 sub-issues linked.</span>
         <br />
 
         <span class="t-line">
@@ -678,7 +692,7 @@ email and password.
         <span class="t-line">
           <span class="t-prompt">$ </span><span class="t-cmd">linearstories import --context orgB stories.md</span>
         </span>
-        <span class="t-line t-success">Done. 3 issues created in Linear (orgB).</span>
+        <span class="t-line t-success">Done. 3 issues created with hierarchy (orgB).</span>
       </div>
     </div>
 

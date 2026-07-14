@@ -42,6 +42,7 @@ function createMockIssueNode(overrides: Record<string, unknown> = {}) {
 		labels: () => Promise.resolve({ nodes: [{ name: "Feature" }] }),
 		project: Promise.resolve({ name: "Q1 Release" }),
 		team: Promise.resolve({ name: "Engineering", key: "ENG" }),
+		parent: Promise.resolve(undefined),
 		...overrides,
 	};
 }
@@ -194,6 +195,31 @@ describe("exportStories", () => {
 		expect(content).toContain("linear_url: https://linear.app/myorg/issue/ENG-42");
 		expect(content).toContain("```yaml");
 		expect(content).toContain("```");
+	});
+
+	test("exports a parent issue identifier as epic metadata", async () => {
+		const child = createMockIssueNode({
+			parent: Promise.resolve({
+				id: "parent-uuid",
+				identifier: "ENG-10",
+				title: "Account access",
+			}),
+		});
+		const client = createMockClient({
+			issues: async () => ({
+				nodes: [child],
+				pageInfo: { hasNextPage: false, endCursor: null },
+			}),
+		});
+		const outputPath = join(tmpDir, "child.md");
+
+		await exportStories(client, {
+			config: defaultConfig,
+			filters: {},
+			outputPath,
+		});
+
+		expect(readFileSync(outputPath, "utf-8")).toContain("epic: ENG-10");
 	});
 
 	// =========================================================================

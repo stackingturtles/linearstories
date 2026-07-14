@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     name: Test
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -27,7 +27,7 @@ jobs:
 
   lint:
     name: Lint
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -45,7 +45,7 @@ jobs:
 
   audit:
     name: Audit
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v6

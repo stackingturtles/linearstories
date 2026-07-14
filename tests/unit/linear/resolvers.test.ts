@@ -12,6 +12,7 @@ function createMockClient(overrides: Record<string, unknown> = {}): LinearClient
 		teams: async () => ({ nodes: [] }),
 		projects: async () => ({ nodes: [] }),
 		issueLabels: async () => ({ nodes: [] }),
+		issueLabel: async () => ({ id: "parent-id", name: "Unknown" }),
 		users: async () => ({ nodes: [] }),
 		workflowStates: async () => ({ nodes: [] }),
 		...overrides,
@@ -23,8 +24,11 @@ const TEAM_UUID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
 const PROJECT_UUID = "b2c3d4e5-f6a7-8901-bcde-f12345678901";
 const LABEL_UUID_1 = "c3d4e5f6-a7b8-9012-cdef-123456789012";
 const LABEL_UUID_2 = "d4e5f6a7-b8c9-0123-def0-234567890123";
-const USER_UUID = "e5f6a7b8-c9d0-1234-ef01-345678901234";
-const STATE_UUID = "f6a7b8c9-d0e1-2345-f012-456789012345";
+const LABEL_UUID_3 = "e5f6a7b8-c9d0-1234-ef01-345678901234";
+const USER_UUID = "f6a7b8c9-d0e1-2345-f012-456789012345";
+const STATE_UUID = "a7b8c9d0-e1f2-3456-0123-567890123456";
+const GROUP_UUID = "g1a2b3c4-d5e6-7890-abcd-ef1234567890";
+const GROUP_UUID_2 = "h2b3c4d5-e6f7-8901-bcde-f12345678901";
 
 // ---------------------------------------------------------------------------
 // resolveTeamId
@@ -236,6 +240,157 @@ describe("Resolver", () => {
 
 			const result = await resolver.resolveWorkflowStateId("Nonexistent", TEAM_UUID);
 			expect(result).toBeUndefined();
+		});
+	});
+
+	// -------------------------------------------------------------------------
+	// Label group exclusivity
+	// -------------------------------------------------------------------------
+
+	describe("label group exclusivity", () => {
+		test("same group conflict — keeps first, warns about second", async () => {
+			const warnMessages: string[] = [];
+			const originalWarn = console.warn;
+			console.warn = (...args: unknown[]) => {
+				warnMessages.push(String(args[0]));
+			};
+
+			try {
+				const client = createMockClient({
+					issueLabels: async (filter: unknown) => {
+						const f = filter as { filter: { name: { eq: string } } };
+						const name = f.filter.name.eq;
+						if (name === "Wallet") return { nodes: [{ id: LABEL_UUID_1, parentId: GROUP_UUID }] };
+						if (name === "Auth") return { nodes: [{ id: LABEL_UUID_2, parentId: GROUP_UUID }] };
+						return { nodes: [] };
+					},
+					issueLabel: async () => ({ id: GROUP_UUID, name: "Domain" }),
+				});
+				const resolver = new Resolver(client);
+
+				const result = await resolver.resolveLabelIds(["Wallet", "Auth"]);
+				expect(result).toEqual([LABEL_UUID_1]);
+				expect(warnMessages.some((m) => m.includes("Auth") && m.includes("Wallet"))).toBe(true);
+			} finally {
+				console.warn = originalWarn;
+			}
+		});
+
+		test("different groups — keeps both", async () => {
+			const client = createMockClient({
+				issueLabels: async (filter: unknown) => {
+					const f = filter as { filter: { name: { eq: string } } };
+					const name = f.filter.name.eq;
+					if (name === "Wallet") return { nodes: [{ id: LABEL_UUID_1, parentId: GROUP_UUID }] };
+					if (name === "Bug") return { nodes: [{ id: LABEL_UUID_2, parentId: GROUP_UUID_2 }] };
+					return { nodes: [] };
+				},
+			});
+			const resolver = new Resolver(client);
+
+			const result = await resolver.resolveLabelIds(["Wallet", "Bug"]);
+			expect(result).toEqual([LABEL_UUID_1, LABEL_UUID_2]);
+		});
+
+		test("mixed grouped and ungrouped — keeps both", async () => {
+			const client = createMockClient({
+				issueLabels: async (filter: unknown) => {
+					const f = filter as { filter: { name: { eq: string } } };
+					const name = f.filter.name.eq;
+					if (name === "Wallet") return { nodes: [{ id: LABEL_UUID_1, parentId: GROUP_UUID }] };
+					if (name === "Feature") return { nodes: [{ id: LABEL_UUID_2 }] };
+					return { nodes: [] };
+				},
+			});
+			const resolver = new Resolver(client);
+
+			const result = await resolver.resolveLabelIds(["Wallet", "Feature"]);
+			expect(result).toEqual([LABEL_UUID_1, LABEL_UUID_2]);
+		});
+
+		test("three labels, same group — keeps only the first", async () => {
+			const warnMessages: string[] = [];
+			const originalWarn = console.warn;
+			console.warn = (...args: unknown[]) => {
+				warnMessages.push(String(args[0]));
+			};
+
+			try {
+				const client = createMockClient({
+					issueLabels: async (filter: unknown) => {
+						const f = filter as { filter: { name: { eq: string } } };
+						const name = f.filter.name.eq;
+						if (name === "Wallet") return { nodes: [{ id: LABEL_UUID_1, parentId: GROUP_UUID }] };
+						if (name === "Auth") return { nodes: [{ id: LABEL_UUID_2, parentId: GROUP_UUID }] };
+						if (name === "Payments") return { nodes: [{ id: LABEL_UUID_3, parentId: GROUP_UUID }] };
+						return { nodes: [] };
+					},
+					issueLabel: async () => ({ id: GROUP_UUID, name: "Domain" }),
+				});
+				const resolver = new Resolver(client);
+
+				const result = await resolver.resolveLabelIds(["Wallet", "Auth", "Payments"]);
+				expect(result).toEqual([LABEL_UUID_1]);
+				expect(warnMessages).toHaveLength(2);
+				expect(warnMessages[0]).toContain("Auth");
+				expect(warnMessages[1]).toContain("Payments");
+			} finally {
+				console.warn = originalWarn;
+			}
+		});
+
+		test("warning message includes the group name", async () => {
+			const warnMessages: string[] = [];
+			const originalWarn = console.warn;
+			console.warn = (...args: unknown[]) => {
+				warnMessages.push(String(args[0]));
+			};
+
+			try {
+				const client = createMockClient({
+					issueLabels: async (filter: unknown) => {
+						const f = filter as { filter: { name: { eq: string } } };
+						const name = f.filter.name.eq;
+						if (name === "Wallet") return { nodes: [{ id: LABEL_UUID_1, parentId: GROUP_UUID }] };
+						if (name === "Auth") return { nodes: [{ id: LABEL_UUID_2, parentId: GROUP_UUID }] };
+						return { nodes: [] };
+					},
+					issueLabel: async () => ({ id: GROUP_UUID, name: "Domain" }),
+				});
+				const resolver = new Resolver(client);
+
+				await resolver.resolveLabelIds(["Wallet", "Auth"]);
+				expect(warnMessages[0]).toContain("Domain");
+			} finally {
+				console.warn = originalWarn;
+			}
+		});
+
+		test("group name is cached — issueLabel called only once per group", async () => {
+			const originalWarn = console.warn;
+			console.warn = () => {};
+
+			try {
+				const issueLabelFn = mock(async () => ({ id: GROUP_UUID, name: "Domain" }));
+				const client = createMockClient({
+					issueLabels: async (filter: unknown) => {
+						const f = filter as { filter: { name: { eq: string } } };
+						const name = f.filter.name.eq;
+						if (name === "Wallet") return { nodes: [{ id: LABEL_UUID_1, parentId: GROUP_UUID }] };
+						if (name === "Auth") return { nodes: [{ id: LABEL_UUID_2, parentId: GROUP_UUID }] };
+						if (name === "Payments") return { nodes: [{ id: LABEL_UUID_3, parentId: GROUP_UUID }] };
+						return { nodes: [] };
+					},
+					issueLabel: issueLabelFn,
+				});
+				const resolver = new Resolver(client);
+
+				await resolver.resolveLabelIds(["Wallet", "Auth", "Payments"]);
+				// Two conflicts but only one group lookup needed
+				expect(issueLabelFn).toHaveBeenCalledTimes(1);
+			} finally {
+				console.warn = originalWarn;
+			}
 		});
 	});
 

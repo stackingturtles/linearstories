@@ -18,6 +18,7 @@ const LABEL_ID_1 = "c3d4e5f6-a7b8-9012-cdef-123456789012";
 const LABEL_ID_2 = "d4e5f6a7-b8c9-0123-def0-234567890123";
 const ASSIGNEE_ID = "e5f6a7b8-c9d0-1234-ef01-345678901234";
 const STATE_ID = "f6a7b8c9-d0e1-2345-f012-456789012345";
+const PARENT_ID = "ENG-10";
 
 function createMockIssue(overrides: Record<string, unknown> = {}) {
 	return {
@@ -36,6 +37,7 @@ function createMockIssue(overrides: Record<string, unknown> = {}) {
 		labels: () => Promise.resolve({ nodes: [{ name: "Feature" }] }),
 		project: Promise.resolve({ name: "Q1 Release" }),
 		team: Promise.resolve({ name: "Engineering", key: "ENG" }),
+		parent: Promise.resolve(undefined),
 		...overrides,
 	};
 }
@@ -76,6 +78,7 @@ describe("createIssue", () => {
 			expect(input.priority).toBe(2);
 			expect(input.estimate).toBe(5);
 			expect(input.stateId).toBe(STATE_ID);
+			expect(input.parentId).toBe(PARENT_ID);
 			return {
 				success: true,
 				issue: Promise.resolve(createMockIssue()),
@@ -94,6 +97,7 @@ describe("createIssue", () => {
 			priority: 2,
 			estimate: 5,
 			stateId: STATE_ID,
+			parentId: PARENT_ID,
 		};
 
 		await createIssue(client, input);
@@ -127,6 +131,7 @@ describe("createIssue", () => {
 			expect(input.priority).toBeUndefined();
 			expect(input.estimate).toBeUndefined();
 			expect(input.stateId).toBeUndefined();
+			expect(input.parentId).toBeUndefined();
 			return {
 				success: true,
 				issue: Promise.resolve(createMockIssue()),
@@ -272,8 +277,34 @@ describe("fetchIssues", () => {
 			displayName: "Jane",
 		});
 		expect(results[0].labels).toEqual({ nodes: [{ name: "Feature" }] });
+		expect(results[0].parent).toBeUndefined();
 		expect(results[0].project).toEqual({ name: "Q1 Release" });
 		expect(results[0].team).toEqual({ name: "Engineering", key: "ENG" });
+	});
+
+	test("resolves parent issue data", async () => {
+		const client = createMockClient({
+			issues: async () => ({
+				nodes: [
+					createMockIssue({
+						parent: Promise.resolve({
+							id: "parent-uuid",
+							identifier: "ENG-10",
+							title: "Account access",
+						}),
+					}),
+				],
+				pageInfo: { hasNextPage: false, endCursor: null },
+			}),
+		});
+
+		const results = await fetchIssues(client, {});
+
+		expect(results[0]?.parent).toEqual({
+			id: "parent-uuid",
+			identifier: "ENG-10",
+			title: "Account access",
+		});
 	});
 
 	test("paginates through multiple pages (cursor-based)", async () => {

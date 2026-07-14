@@ -115,6 +115,7 @@ function issueToUserStory(issue: LinearIssueData): UserStory {
 		title: issue.title,
 		linearId: issue.identifier,
 		linearUrl: issue.url,
+		epic: issue.parent?.identifier ?? null,
 		priority: issue.priority ?? null,
 		labels: issue.labels?.nodes?.map((l) => l.name) ?? [],
 		estimate: issue.estimate ?? null,

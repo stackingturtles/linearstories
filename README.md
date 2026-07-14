@@ -1,6 +1,6 @@
 # linearstories
 
-A CLI tool that bridges markdown-based user stories and Linear issues, enforcing user story and acceptance criteria discipline for AI agent-driven development.
+A CLI tool that bridges markdown-based epics and user stories with Linear issues, preserving a two-level hierarchy and enforcing acceptance criteria discipline for AI agent-driven development.
 
 ## Why structured acceptance criteria matter for AI agents
 
@@ -92,14 +92,14 @@ linearstories import stories/login.md
 
 The CLI creates issues in Linear and writes the `linear_id` and `linear_url` back into your markdown file so that subsequent imports update the existing issues rather than creating duplicates.
 
-## User story markdown template
+## Linear issue markdown template
 
-Each markdown file can contain one or more user stories. The file structure is:
+Each markdown file can contain one or more epics and user stories. The file structure is:
 
 ```
 [YAML frontmatter]        -- optional, sets file-level defaults
-[Story 1]                  -- H2 heading + metadata block + body
-[Story 2]                  -- another H2 heading + metadata block + body
+[Issue 1]                  -- H2 heading + metadata block + body
+[Issue 2]                  -- another H2 heading + metadata block + body
 ...
 ```
 
@@ -116,9 +116,20 @@ team: "Engineering"
 
 Both fields are optional. They can be overridden per-story or via CLI flags.
 
+### Epics and user stories
+
+`linearstories` supports a two-level hierarchy using Linear's native parent and sub-issue relationship:
+
+| Type | Identification | Content | Parent relationship |
+|------|----------------|---------|---------------------|
+| Epic | Per-issue `labels` includes the exact label `Epic` | High-level goal, scope, and `### Why is this needed?`; no acceptance criteria | Top level |
+| User story | Per-issue `labels` does not include `Epic` | Description plus an `### Acceptance Criteria` checklist | Optional `epic` metadata links it to an epic |
+
+Standalone user stories remain valid. The `epic` property is only required when a user story belongs to an epic. Because `Epic` identifies the issue type, do not add it to `defaultLabels`.
+
 ### Story heading
 
-Each story starts with an H2 heading (`##`). The heading text becomes the Linear issue title:
+Each epic or user story starts with an H2 heading (`##`). The heading text becomes the Linear issue title:
 
 ```markdown
 ## As a user, I want to reset my password so that I can regain access
@@ -148,6 +159,7 @@ All fields are optional. Here is what each field does:
 |------------- |----------- |---------------------------------------------------------------------------- |
 | `linear_id`  | string     | Linear issue identifier (e.g., `ENG-42`). Populated automatically on import. |
 | `linear_url` | string     | Linear issue URL. Populated automatically on import.                        |
+| `epic`       | string     | Optional parent epic identifier or exact title of an epic in the same import. User stories only. |
 | `priority`   | number     | Priority level: `0` = None, `1` = Urgent, `2` = High, `3` = Normal, `4` = Low |
 | `labels`     | string[]   | Label names to apply. Merged with `defaultLabels` from config.              |
 | `estimate`   | number     | Story point estimate.                                                       |
@@ -156,13 +168,15 @@ All fields are optional. Here is what each field does:
 
 Leave `linear_id` and `linear_url` empty for new stories. The import command fills them in automatically.
 
-### Story body
+### Issue body
 
-Everything after the metadata block and before the next H2 heading is the story body. It becomes the Linear issue description. Use standard markdown -- paragraphs, lists, code blocks, and so on.
+Everything after the metadata block and before the next H2 heading is the issue body. It becomes the Linear issue description. Use standard markdown -- paragraphs, lists, code blocks, and so on.
+
+Epics should explain the high-level goal and scope, and must include a substantive `### Why is this needed?` section to pass the quality skill. Epics must not contain acceptance criteria.
 
 ### Acceptance criteria
 
-Include acceptance criteria as a checklist under an H3 heading:
+Every user story must include acceptance criteria as a checklist under an H3 heading:
 
 ```markdown
 ### Acceptance Criteria
@@ -172,11 +186,11 @@ Include acceptance criteria as a checklist under an H3 heading:
 - [ ] Reset link expires after 24 hours
 ```
 
-This section is part of the story body and is included in the Linear issue description.
+This section is part of the story body and is included in the Linear issue description. It is required for user stories and forbidden on epics.
 
 ### Complete annotated example
 
-A file with two stories:
+A file with one epic and two child stories:
 
 ````markdown
 ---
@@ -184,11 +198,33 @@ project: "Q1 2026 Release"
 team: "Engineering"
 ---
 
+## Account access
+
+```yaml
+linear_id:
+linear_url:
+priority: 2
+labels: [Epic, Auth]
+status: Backlog
+```
+
+Provide secure account access and recovery flows across the product.
+
+### Scope
+
+- Email and password login
+- Password recovery
+
+### Why is this needed?
+
+Users need a secure way to access and recover their accounts without support intervention.
+
 ## As a user, I want to log in so that I can access my account
 
 ```yaml
 linear_id:               # left empty for new stories
 linear_url:              # left empty for new stories
+epic: Account access     # exact title of the epic in this import
 priority: 2              # High priority
 labels: [Feature, Auth]  # merged with defaultLabels from config
 estimate: 3              # 3 story points
@@ -211,6 +247,7 @@ The system should support rate limiting after 5 failed attempts.
 ```yaml
 linear_id:
 linear_url:
+epic: Account access
 priority: 3              # Normal priority
 labels: [Feature, Auth]
 estimate: 2
@@ -321,7 +358,7 @@ linearstories import --config ~/.config/linearstories/org-a.json stories/*.md
 
 ### `linearstories import`
 
-Import user stories from markdown files into Linear. Creates new issues or updates existing ones based on whether `linear_id` is present in the metadata block.
+Import epics and user stories from markdown files into Linear. Creates new issues or updates existing ones based on whether `linear_id` is present, and links stories to epics through Linear sub-issues.
 
 ```
 linearstories import <files...> [options]
@@ -368,7 +405,7 @@ linearstories import -c ./team-config.json stories/*.md
 
 ### `linearstories export`
 
-Export Linear issues to a markdown file in the user story format. The exported file can be edited and re-imported.
+Export Linear issues to the epic and user-story markdown format. The exported file can be edited and re-imported.
 
 ```
 linearstories export [options]
@@ -458,10 +495,12 @@ linearstories import stories/login.md
 ```
 
 The CLI:
-1. Parses the markdown file and extracts stories.
-2. Resolves team, project, label, assignee, and status names to Linear UUIDs.
-3. Creates a new Linear issue for each story (or updates if `linear_id` is already set).
-4. Writes the `linear_id` and `linear_url` back into the markdown file.
+1. Parses every input file and extracts epics and user stories.
+2. Validates the issue types and local hierarchy.
+3. Creates or updates epics before user stories, regardless of source file order.
+4. Resolves team, project, label, assignee, status, and parent references.
+5. Creates or updates each issue and sets `parentId` for child stories.
+6. Writes the `linear_id` and `linear_url` back into each markdown file.
 
 ### Step 3: Inspect the write-back
 
@@ -532,6 +571,14 @@ linearstories import stories/login.md
 
 Per-story labels and `defaultLabels` from the config are merged and deduplicated. If your config has `"defaultLabels": ["User Story"]` and a story specifies `labels: [Feature, Auth]`, the resulting issue gets all three labels: `Feature`, `Auth`, and `User Story`.
 
+The exact label `Epic` is reserved as the issue-type discriminator and cannot be configured in `defaultLabels`.
+
+### Epic hierarchy resolution
+
+A user story can set `epic` to either an existing Linear identifier such as `ENG-42` or the exact title of an epic included anywhere in the same import command. Local epics are processed first. Existing Linear parents are verified to have the `Epic` label and to be top-level issues before the child is linked.
+
+The importer rejects nested epics, epics with acceptance criteria, user stories without an acceptance-criteria checklist, and invalid or ambiguous parent references. See [docs/USER_STORY_FORMAT.md](docs/USER_STORY_FORMAT.md) for the complete rules.
+
 ### Team and project resolution order
 
 For both team and project, the CLI resolves in this order:
@@ -542,7 +589,7 @@ For both team and project, the CLI resolves in this order:
 
 ## Export workflow
 
-The export command pulls issues from Linear and writes them to a markdown file in the standard user story format.
+The export command pulls issues from Linear and writes them to the standard markdown format. Epic labels are preserved, and child issues receive `epic: <parent-identifier>` metadata so the hierarchy can be re-imported reliably.
 
 ### Basic export
 
@@ -599,6 +646,9 @@ linearstories ships with a built-in Claude Code skill that evaluates the quality
 The skill reads your markdown file and produces a structured report:
 
 - **Scores each story 0-100%** across specificity, testability, completeness, and description quality
+- **Classifies epics separately** and scores goal clarity, scope, rationale, and description quality without requiring acceptance criteria
+- **Downgrades epics missing `Why is this needed?`** so they cannot reach the 80% pass threshold
+- **Detects hard contradictions** within and across epics and user stories
 - **Flags anti-patterns** like subjective language ("intuitive", "fast", "looks good") and ambiguous scope ("etc.", "as needed")
 - **Rewrites failing criteria** with concrete, testable alternatives
 - **Recommends a style guide** when UI/visual criteria are unverifiable

@@ -1,7 +1,7 @@
 {
   "name": "linearstories",
-  "version": "1.1.0",
-  "description": "CLI tool that bridges markdown-based user stories and Linear issues, enforcing acceptance criteria discipline for AI agents",
+  "version": "1.2.0",
+  "description": "CLI tool that syncs markdown epics and user stories with Linear hierarchy and acceptance criteria",
   "module": "src/cli/index.ts",
   "type": "module",
   "license": "MIT",
@@ -11,6 +11,7 @@
   },
   "keywords": [
     "linear",
+    "epics",
     "user-stories",
     "acceptance-criteria",
     "ai-agents",

@@ -48,6 +48,10 @@ status: Backlog
 
 Login description.
 
+### Acceptance Criteria
+
+- [ ] Login succeeds with valid credentials
+
 ## As a user, I want to sign up
 
 \`\`\`yaml
@@ -57,6 +61,10 @@ estimate: 2
 \`\`\`
 
 Signup description.
+
+### Acceptance Criteria
+
+- [ ] A user can create an account
 `;
 
 // ---------------------------------------------------------------------------
@@ -81,6 +89,10 @@ status: Backlog
 \`\`\`
 
 Updated login description.
+
+### Acceptance Criteria
+
+- [ ] Login succeeds with valid credentials
 `;
 
 // ---------------------------------------------------------------------------
@@ -103,6 +115,10 @@ labels: [Feature]
 
 Login body.
 
+### Acceptance Criteria
+
+- [ ] Login succeeds with valid credentials
+
 ## As a user, I want to sign up
 
 \`\`\`yaml
@@ -111,6 +127,48 @@ labels: [Feature]
 \`\`\`
 
 Signup body.
+
+### Acceptance Criteria
+
+- [ ] A user can create an account
+`;
+
+const epicMarkdown = `---
+project: "Q1 Release"
+team: "Engineering"
+---
+
+## Account access
+
+\`\`\`yaml
+labels: [Epic, Auth]
+priority: 2
+\`\`\`
+
+Provide secure account access across the product.
+
+### Why is this needed?
+
+Users need a consistent way to authenticate before using protected features.
+`;
+
+const childMarkdown = `---
+project: "Q1 Release"
+team: "Engineering"
+---
+
+## As a user, I want to log in
+
+\`\`\`yaml
+epic: Account access
+labels: [Feature, Auth]
+\`\`\`
+
+Allow registered users to authenticate.
+
+### Acceptance Criteria
+
+- [ ] Valid credentials create an authenticated session
 `;
 
 // ---------------------------------------------------------------------------
@@ -124,6 +182,7 @@ function createMockClient(overrides: Record<string, unknown> = {}) {
 		teams: async () => ({ nodes: [{ id: TEAM_UUID }] }),
 		projects: async () => ({ nodes: [{ id: PROJECT_UUID }] }),
 		issueLabels: async () => ({ nodes: [{ id: LABEL_UUID_1 }] }),
+		issueLabel: async () => ({ id: "parent-id", name: "Unknown" }),
 		users: async () => ({ nodes: [{ id: USER_UUID }] }),
 		workflowStates: async () => ({ nodes: [{ id: STATE_UUID }] }),
 		createIssue: async () => {
@@ -306,6 +365,236 @@ describe("importStories", () => {
 		const updatedContent = readTmpFile("writeback.md");
 		expect(updatedContent).toContain("linear_id: ENG-101");
 		expect(updatedContent).toContain("linear_url: https://linear.app/myorg/issue/ENG-101");
+	});
+
+	// =========================================================================
+	// Epic hierarchy
+	// =========================================================================
+
+	test("creates epics before children across files and preserves source result order", async () => {
+		const childPath = writeTmpFile("child.md", childMarkdown);
+		const epicPath = writeTmpFile("epic.md", epicMarkdown);
+		const inputs: Array<Record<string, unknown>> = [];
+		const createIssueFn = mock(async (input: Record<string, unknown>) => {
+			inputs.push(input);
+			const identifier = `ENG-${101 + inputs.length - 1}`;
+			return {
+				success: true,
+				issue: Promise.resolve({
+					id: `issue-${inputs.length}`,
+					identifier,
+					url: `https://linear.app/myorg/issue/${identifier}`,
+				}),
+			};
+		});
+		const client = createMockClient({ createIssue: createIssueFn });
+
+		const summary = await importStories(client, {
+			files: [childPath, epicPath],
+			config: defaultConfig,
+		});
+
+		expect(createIssueFn).toHaveBeenCalledTimes(2);
+		expect(inputs[0]?.title).toBe("Account access");
+		expect(inputs[0]?.parentId).toBeUndefined();
+		expect(inputs[1]?.title).toBe("As a user, I want to log in");
+		expect(inputs[1]?.parentId).toBe("ENG-101");
+		expect(summary.results[0]?.story.title).toBe("As a user, I want to log in");
+		expect(summary.results[0]?.linearId).toBe("ENG-102");
+		expect(summary.results[1]?.story.title).toBe("Account access");
+		expect(summary.results[1]?.linearId).toBe("ENG-101");
+	});
+
+	test("links a user story to an existing Epic-labelled Linear issue", async () => {
+		const story = childMarkdown.replace("epic: Account access", "epic: ENG-10");
+		const filePath = writeTmpFile("external-parent.md", story);
+		const createIssueFn = mock(async (input: Record<string, unknown>) => ({
+			success: true,
+			issue: Promise.resolve({
+				id: "child-id",
+				identifier: "ENG-11",
+				url: "https://linear.app/myorg/issue/ENG-11",
+			}),
+		}));
+		const issueFn = mock(async () => ({
+			id: "epic-id",
+			identifier: "ENG-10",
+			parentId: undefined,
+			labels: async () => ({ nodes: [{ name: "Epic" }] }),
+		}));
+		const client = createMockClient({ createIssue: createIssueFn, issue: issueFn });
+
+		const summary = await importStories(client, {
+			files: [filePath],
+			config: defaultConfig,
+		});
+
+		expect(summary.created).toBe(1);
+		expect(issueFn).toHaveBeenCalledTimes(1);
+		expect(createIssueFn.mock.calls[0]?.[0]).toMatchObject({ parentId: "ENG-10" });
+	});
+
+	test("fails a child when its existing parent does not have the Epic label", async () => {
+		const story = childMarkdown.replace("epic: Account access", "epic: ENG-10");
+		const filePath = writeTmpFile("invalid-parent.md", story);
+		const createIssueFn = mock(async () => {
+			throw new Error("should not create");
+		});
+		const client = createMockClient({
+			createIssue: createIssueFn,
+			issue: async () => ({
+				id: "not-epic-id",
+				identifier: "ENG-10",
+				parentId: undefined,
+				labels: async () => ({ nodes: [{ name: "Feature" }] }),
+			}),
+		});
+
+		const summary = await importStories(client, {
+			files: [filePath],
+			config: defaultConfig,
+		});
+
+		expect(summary.failed).toBe(1);
+		expect(summary.results[0]?.error).toContain("does not have the Epic label");
+		expect(createIssueFn).not.toHaveBeenCalled();
+	});
+
+	test("updates an existing story with the Linear parent linkage", async () => {
+		const story = childMarkdown
+			.replace("epic: Account access", "linear_id: ENG-11\nepic: ENG-10")
+			.replace("## As a user, I want to log in", "## Existing child");
+		const filePath = writeTmpFile("update-child.md", story);
+		const updateIssueFn = mock(async () => ({
+			success: true,
+			issue: Promise.resolve({ identifier: "ENG-11" }),
+		}));
+		const client = createMockClient({
+			updateIssue: updateIssueFn,
+			issue: async () => ({
+				id: "epic-id",
+				identifier: "ENG-10",
+				parentId: undefined,
+				labels: async () => ({ nodes: [{ name: "Epic" }] }),
+			}),
+		});
+
+		const summary = await importStories(client, {
+			files: [filePath],
+			config: defaultConfig,
+		});
+
+		expect(summary.updated).toBe(1);
+		expect(updateIssueFn.mock.calls[0]?.[1]).toMatchObject({ parentId: "ENG-10" });
+	});
+
+	test("clears the Linear parent when an updated story omits epic metadata", async () => {
+		const filePath = writeTmpFile("standalone-update.md", markdownExistingStories);
+		const updateIssueFn = mock(async () => ({
+			success: true,
+			issue: Promise.resolve({ identifier: "ENG-42" }),
+		}));
+		const client = createMockClient({ updateIssue: updateIssueFn });
+
+		await importStories(client, {
+			files: [filePath],
+			config: defaultConfig,
+		});
+
+		expect(updateIssueFn.mock.calls[0]?.[1]).toMatchObject({ parentId: null });
+	});
+
+	test("clears labels when converting an existing epic to an unlabeled user story", async () => {
+		const markdown = markdownExistingStories.replace("labels: [Feature]\n", "");
+		const filePath = writeTmpFile("epic-to-story.md", markdown);
+		const updateIssueFn = mock(async () => ({
+			success: true,
+			issue: Promise.resolve({ identifier: "ENG-42" }),
+		}));
+		const client = createMockClient({ updateIssue: updateIssueFn });
+
+		await importStories(client, {
+			files: [filePath],
+			config: defaultConfig,
+		});
+
+		expect(updateIssueFn.mock.calls[0]?.[1]).toMatchObject({ labelIds: [] });
+	});
+
+	test("dry run validates local hierarchy without calling Linear", async () => {
+		const childPath = writeTmpFile("child.md", childMarkdown);
+		const epicPath = writeTmpFile("epic.md", epicMarkdown);
+		const issueFn = mock(async () => {
+			throw new Error("should not resolve remote issues");
+		});
+		const createIssueFn = mock(async () => {
+			throw new Error("should not create");
+		});
+		const client = createMockClient({ issue: issueFn, createIssue: createIssueFn });
+
+		const summary = await importStories(client, {
+			files: [childPath, epicPath],
+			config: defaultConfig,
+			dryRun: true,
+		});
+
+		expect(summary.skipped).toBe(2);
+		expect(summary.failed).toBe(0);
+		expect(issueFn).not.toHaveBeenCalled();
+		expect(createIssueFn).not.toHaveBeenCalled();
+	});
+
+	test("rejects acceptance criteria on an epic", async () => {
+		const invalidEpic = epicMarkdown.replace(
+			"### Why is this needed?",
+			"### Acceptance Criteria\n\n- [ ] Epic is complete\n\n### Why is this needed?",
+		);
+		const filePath = writeTmpFile("invalid-epic.md", invalidEpic);
+		const client = createMockClient();
+
+		const summary = await importStories(client, {
+			files: [filePath],
+			config: defaultConfig,
+		});
+
+		expect(summary.failed).toBe(1);
+		expect(summary.results[0]?.error).toContain("must not contain an Acceptance Criteria");
+	});
+
+	test("rejects a user story without acceptance criteria", async () => {
+		const invalidStory = childMarkdown.replace(
+			"### Acceptance Criteria\n\n- [ ] Valid credentials create an authenticated session",
+			"",
+		);
+		const filePath = writeTmpFile("invalid-story.md", invalidStory);
+		const client = createMockClient();
+
+		const summary = await importStories(client, {
+			files: [filePath],
+			config: defaultConfig,
+			dryRun: true,
+		});
+
+		expect(summary.failed).toBe(1);
+		expect(summary.results[0]?.error).toContain("must contain an ### Acceptance Criteria");
+	});
+
+	test("rejects nested epics", async () => {
+		const invalidEpic = epicMarkdown.replace(
+			"labels: [Epic, Auth]",
+			"epic: ENG-1\nlabels: [Epic, Auth]",
+		);
+		const filePath = writeTmpFile("nested-epic.md", invalidEpic);
+		const client = createMockClient();
+
+		const summary = await importStories(client, {
+			files: [filePath],
+			config: defaultConfig,
+			dryRun: true,
+		});
+
+		expect(summary.failed).toBe(1);
+		expect(summary.results[0]?.error).toContain("cannot reference another epic");
 	});
 
 	// =========================================================================

@@ -67,6 +67,9 @@ function buildYamlLines(story: UserStory): string[] {
 	if (story.linearUrl !== null) {
 		lines.push(`linear_url: ${story.linearUrl}`);
 	}
+	if (story.epic) {
+		lines.push(`epic: ${story.epic}`);
+	}
 
 	if (story.priority !== null) {
 		lines.push(`priority: ${story.priority}`);

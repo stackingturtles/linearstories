@@ -1,166 +1,185 @@
-# `/rate-userstories` — Acceptance Criteria Quality Evaluator
+# `/rate-userstories` - Epic and User Story Quality Evaluator
 
-A Claude Code skill that evaluates user stories in a markdown file, grading each story's acceptance criteria on verifiability and quality, detecting contradictions within and across stories, and producing reviewable replacement markdown in the canonical `linearstories` format.
+A coding-agent skill that evaluates epics and user stories in the [linearstories format](./USER_STORY_FORMAT.md), detects contradictions within and across issues, and emits reviewable replacement markdown.
 
 ## Usage
 
-In any Claude Code session within a project that has linearstories installed:
-
-```
+```text
 /rate-userstories <path-to-markdown-file>
 ```
 
-### Examples
+Examples:
 
 ```bash
-# Rate stories in a local file
 /rate-userstories stories/q1-2026.md
-
-# Rate stories using an absolute path
 /rate-userstories /Users/team/project/userstories.md
-
-# Rate the included template
 /rate-userstories templates/user-story.md
 ```
 
-## What it does
+## Issue classification
 
-The skill reads a markdown file in the [linearstories format](./USER_STORY_FORMAT.md) and produces a structured quality report for every user story in the file.
+The skill reads the entire document before scoring and classifies each H2 issue block from its own metadata:
 
-It is designed for agentic coding workflows, so it does more than assign a score:
+| Type | Classification rule | Quality target |
+|------|---------------------|----------------|
+| Epic | `labels` includes the exact label `Epic` | Clear goal, bounded scope, and explicit rationale |
+| User story | `labels` does not include `Epic` | Concrete description and testable acceptance criteria |
 
-- Parses the entire file first, rather than judging stories in isolation
-- Checks that each story actually follows the expected `linearstories` structure
-- Scores each story on clarity and verifiability
-- Detects contradictions within a story and across stories in the same file
-- Emits replacement markdown blocks that a human can review and then copy back into the source document
+Epics and user stories are not graded with the same rubric. In particular, epics must not be penalized for having no acceptance criteria because epics are not supposed to contain them.
 
 ## Structural validation
 
-Before grading quality, the skill verifies that each story can be evaluated reliably against the documented format:
+Before scoring, the skill verifies the canonical format and hierarchy rules.
 
-- `##` H2 heading for each story title
-- Optional fenced `yaml` metadata block immediately after the heading
-- Description/body content
-- `### Acceptance Criteria` section with checkbox items (`- [ ] ...`)
+Every issue requires:
 
-If a story is malformed or missing acceptance criteria, the skill must fail it explicitly rather than pretending it is merely low quality.
+- An H2 title
+- An optional fenced `yaml` metadata block immediately after the title
+- A meaningful body
 
-### Evaluation dimensions
+Epics require:
 
-Each story is scored on a 0-100% scale across four weighted dimensions:
+- The exact `Epic` label in per-issue metadata
+- No `epic` parent property
+- No `### Acceptance Criteria` section
+- A high-level goal and enough scope to understand what child stories belong
+
+User stories require:
+
+- No `Epic` label
+- An `### Acceptance Criteria` section with checkbox items (`- [ ] ...`)
+- An optional `epic` parent reference when the story belongs to an epic
+
+A malformed hierarchy, nested epic, epic containing acceptance criteria, or user story missing acceptance criteria is a structural failure. A missing `### Why is this needed?` section is handled by the epic quality score rather than as a structural hard fail.
+
+## User story rubric
+
+User stories are scored from 0-100%:
 
 | Dimension | Weight | What it measures |
-|-----------|--------|-----------------|
-| **Specificity** | 30% | Are criteria concrete and measurable? Do they use precise values, counts, or named states? |
-| **Testability** | 35% | Can each criterion be verified with a clear pass/fail? Could a QA engineer write a test case from it? |
-| **Completeness** | 25% | Do criteria cover the story's scope? Are edge cases, error states, and boundaries addressed? |
-| **Description Quality** | 10% | Does the description provide enough context for a developer? |
+|-----------|--------|------------------|
+| Specificity | 30% | Concrete values, states, actors, and boundaries rather than vague language |
+| Testability | 35% | Whether each criterion has a clear pass/fail result |
+| Completeness | 25% | Happy path, errors, edge cases, and scope coverage |
+| Description quality | 10% | Context needed to understand intent and constraints |
 
-These dimensions produce the numeric score, but score alone does not determine pass/fail.
+## Epic rubric
 
-## Hard-fail contradiction detection
+Epics are scored from 0-100% using an epic-specific rubric:
 
-Contradiction detection is a hard-fail rule, not a weighted scoring dimension.
+| Dimension | Weight | What it measures |
+|-----------|--------|------------------|
+| Goal clarity | 30% | A concrete high-level capability or outcome with identifiable beneficiaries |
+| Scope and decomposition | 30% | Boundaries, major workstreams, exclusions, and enough structure to assess child-story fit |
+| Rationale | 30% | A substantive `### Why is this needed?` section explaining user, business, operational, or technical value |
+| Description quality | 10% | Context, constraints, domain language, and dependencies needed to understand the epic |
 
-Any contradiction causes the affected story or stories to fail, even if the numeric score is otherwise 80% or higher.
+If `### Why is this needed?` is missing or empty, the epic receives **0/30 for Rationale**. Its maximum possible score is therefore 70%, below the 80% pass threshold. The replacement markdown must add a proposed rationale for human review without presenting the proposal as authoritative product truth.
 
-The skill checks for contradictions at two severity levels:
+## Contradiction detection
+
+Contradiction detection is a hard-fail rule, not a weighted scoring dimension. Any hard contradiction fails every affected issue even if its numeric score is 80% or higher.
+
+The skill compares the full document, including:
+
+- Title against body and sections within one issue
+- Acceptance criterion against acceptance criterion
+- Epic goal, scope, constraints, and rationale against child user stories
+- User story against its referenced local epic
+- Every epic and user story against other issues in the same document
 
 ### Hard contradictions
 
-Same entity, workflow, or feature area with mutually exclusive requirements. These are always hard-fail.
-
-- **Within a story** — title vs description, title vs acceptance criteria, description vs acceptance criteria, and criterion vs criterion
-- **Across stories in the same file** — conflicting behavior, routes, timing requirements, auth methods, user permissions, state transitions, retry limits, validation rules, or other product constraints for the same workflow or feature area
+Requirements for the same entity, workflow, or feature area that cannot both be true.
 
 Examples:
 
-- Story title says email/password login, but acceptance criteria require SSO-only login
-- One criterion requires redirecting to `/dashboard`, while another requires remaining on the login page after success
-- One story says reset links expire after 24 hours, while another says they expire after 15 minutes for the same workflow
-- Story A says "users can withdraw tokens at any time" but Story B says "all withdrawals are locked during the vesting period" for the same token
-- One story requires "contract owner can pause transfers" while another requires "token transfers are permissionless and cannot be blocked by any party"
-- Story A says "staking rewards are calculated per block" but Story B says "rewards are distributed on a fixed 24-hour epoch schedule" for the same staking pool
+- An epic says authentication is SSO-only while a child story requires email and password login
+- Epic scope excludes password recovery while a linked story implements password recovery
+- One story requires redirecting to `/dashboard` while another requires remaining on the login page after the same successful action
+- One issue says reset links expire after 24 hours while another says 15 minutes for the same reset flow
+- One issue permits withdrawals at any time while another locks all withdrawals during vesting for the same token
 
 ### Tensions
 
-Different domains or features with potentially conflicting assumptions. These are flagged as warnings in the report but do not hard-fail.
+Potentially conflicting assumptions that are not yet mutually exclusive. Tensions are warnings and do not fail an issue.
 
 Examples:
 
-- One story assumes account data is permanently deleted on closure while a separate audit-trail story assumes transaction history is retained indefinitely
-- A gas-optimization story targets minimizing storage writes while a separate event-logging story requires emitting events on every state change
+- An account-closure story permanently deletes data while an audit epic requires long-term transaction retention, but the retained data categories are not defined
+- A performance epic minimizes storage writes while an observability story emits an event for every state change
 
-The skill treats contradictions as especially important for agentic development because they produce ambiguous implementation targets and unreliable definitions of done.
+For every hard contradiction, the skill proposes one consistent normalization for the replacement markdown and states what it chose and discarded. A human reviewer decides the product truth.
 
-## Pass/fail rules
+## Pass and fail rules
 
-A story passes only if all of the following are true:
+An issue passes only when all of the following are true:
 
-- Numeric score is **80% or above**
-- No hard contradictions were found within the story
-- The story does not hard-contradict any other story in the same file
-- The story is structurally valid enough to evaluate
+- Its type-specific score is 80% or higher
+- It is structurally valid for its type
+- It has no hard contradiction within itself
+- It does not hard-contradict another issue in the document
 
-If any of those conditions fail, the story fails. Tensions (warnings) do not cause failure but are reported.
+Tensions are reported as warnings and do not cause failure.
 
-### Anti-patterns detected
+## User story anti-patterns
 
-The skill flags subjective or unquantified language in acceptance criteria:
+The skill flags acceptance criteria containing subjective or unquantified language:
 
-- **Subjective UI language** — "easy to use", "intuitive", "nice looking", "user-friendly", "clean UI", "visually appealing", "looks good", "modern design"
-- **Unquantified performance** — "fast", "responsive", "smooth", "quick" (without thresholds like "< 200ms")
-- **Weasel words** — "should work well", "properly handles", "appropriate", "reasonable", "seamless", "robust"
-- **Ambiguous scope** — "etc.", "and more", "as needed", "where applicable", "various"
+- Subjective UI language: "easy to use", "clean UI", "looks good", "modern design"
+- Unquantified performance: "fast", "responsive", "smooth" without a threshold
+- Weasel words: "properly handles", "appropriate", "reasonable", "robust"
+- Ambiguous scope: "etc.", "as needed", "where applicable", "various"
 
-Each flagged criterion gets an explanation of *why* it fails and a concrete rewrite.
+Each flagged criterion receives an explanation and a concrete rewrite.
 
-### Style guide recommendation
+When visual criteria are unverifiable, the skill recommends creating a style guide with measurable color, spacing, typography, and component rules.
 
-When UI or visual acceptance criteria are unverifiable (e.g., "the button looks professional"), the skill recommends creating a **style guide** with concrete design rules (hex colors, spacing, typography, component specs) that acceptance criteria can reference instead.
+## Epic anti-patterns
 
-**Before:** "Button looks good and matches the design"
-**After:** "Button uses the primary action style defined in the style guide (background: `#2563EB`, text: white, padding: `8px 16px`, border-radius: `6px`)"
+The skill flags epics that:
+
+- Describe a solution without identifying the outcome or beneficiary
+- Use unbounded scope such as "support everything" or "handle all cases"
+- Duplicate implementation-level acceptance criteria instead of defining a high-level boundary
+- Lack major workstreams or provide no basis for deciding whether a child belongs
+- State a rationale as circular restatement of the title
+- Use a placeholder `Why is this needed?` section without substantive value
 
 ## Output format
 
-The report is structured as:
+The report contains:
 
-1. **Summary table** — Every story with its score, pass/fail status, and whether it failed due to hard contradiction, tension (warning only), structural issue, or score
-2. **Contradictions and tensions** — A dedicated section listing every hard contradiction and tension found, with severity level, affected stories, quoted conflicting statements, and why they conflict. For hard contradictions, the normalization choice (which interpretation the skill picked and which it discarded). For tensions, the risk if both stories are implemented as-is.
-3. **Detailed breakdown with inline replacement markdown** — Every failed story gets per-dimension scores, flagged criteria with rewrites, contradiction notes when applicable, suggested additions, and immediately after the breakdown, a full replacement markdown block in the canonical `linearstories` format. Placing the replacement inline means the reader sees the diagnosis and fix together rather than cross-referencing a separate section.
-4. **Style guide recommendation** — Included only when UI/visual anti-patterns are detected
-5. **Passing stories** — Brief listing of stories that passed with one-line notes
+1. **Summary table** - issue title, type, score, pass/fail, and primary reason
+2. **Hierarchy review** - epic-to-story links, unresolved or invalid references, and orphan/standalone stories
+3. **Contradictions and tensions** - severity, affected issues, conflicting statements, explanation, and hard-contradiction normalization choice
+4. **Detailed breakdown with inline replacement markdown** - type-specific scores, failure reasons, flagged content, additions, and a complete proposed replacement immediately after each failed issue
+5. **Style guide recommendation** - only when visual criteria require one
+6. **Passing issues** - concise notes on strengths and minor improvements
+
+## Replacement markdown
+
+Replacement blocks are proposals for human review. They do not modify the source document automatically.
+
+Every replacement must:
+
+- Preserve valid metadata, including `linear_id`, `linear_url`, `labels`, and `epic`
+- Use the canonical structure from [USER_STORY_FORMAT.md](./USER_STORY_FORMAT.md)
+- Resolve all reported hard contradictions consistently across affected blocks
+- Be complete enough to replace the original H2 issue block
+
+Epic replacements must:
+
+- Retain the exact `Epic` label
+- Contain no acceptance criteria
+- Include a clear goal, scope, and substantive `### Why is this needed?` section
+
+User story replacements must:
+
+- Retain a valid `epic` parent reference when present
+- Contain a description and `### Acceptance Criteria` checkbox list
+- Use criteria specific enough for implementation and pass/fail verification
 
 ## Installation
 
-The skill is a project-local Claude Code command. It is included automatically when you clone the linearstories repository — no additional installation is needed.
-
-The skill file lives at `.claude/commands/rate-userstories.md`.
-
-### Using in other projects
-
-To add this skill to any project, copy the skill file:
-
-```bash
-mkdir -p .claude/commands
-cp path/to/linearstories/.claude/commands/rate-userstories.md .claude/commands/
-```
-
-The skill works with any markdown file that follows the linearstories format (H2 story headings, `### Acceptance Criteria` sections with checkbox lists).
-
-## Replacement markdown requirements
-
-Replacement markdown is intended for human review first and source-document updates second.
-
-The skill should:
-
-- Emit a complete replacement story block, not just rewritten bullet points
-- Preserve the canonical structure from [USER_STORY_FORMAT.md](./USER_STORY_FORMAT.md): H2 title, optional YAML metadata, description, and `### Acceptance Criteria` checkbox list
-- Rewrite enough of the story to remove ambiguity and contradictions, not just the single offending line
-- Emit replacement blocks for all affected stories when a hard contradiction spans multiple stories. All replacement blocks for the same contradiction must be consistent — they must reflect the same normalization choice.
-- When resolving a contradiction, the skill proposes one consistent interpretation and explains what was chosen and what was discarded. Example: "Proposed normalization: using 24-hour expiry (from Story A). Discarded: 15-minute expiry (from Story B)."
-- Place each replacement block inline, immediately after the story's detailed breakdown, so the reader sees the diagnosis and the fix together
-
-The skill should not assume its rewrite is authoritative product truth. The human reviewer decides whether to accept the proposed markdown and merge it back into the original document.
+The project-local command lives at `.claude/commands/rate-userstories.md`. The agent skill can also be installed at `~/.agents/skills/rate-userstories/SKILL.md`.

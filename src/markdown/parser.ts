@@ -90,6 +90,7 @@ function parseStorySection(section: string, frontmatter: FileFrontmatter): UserS
 	// Extract metadata fields with proper null handling
 	const linearId = extractStringOrNull(metadata.linear_id);
 	const linearUrl = extractStringOrNull(metadata.linear_url);
+	const epic = extractStringOrNull(metadata.epic);
 	const priority = extractNumberOrNull(metadata.priority);
 	const labels = extractLabels(metadata.labels);
 	const estimate = extractNumberOrNull(metadata.estimate);
@@ -104,6 +105,7 @@ function parseStorySection(section: string, frontmatter: FileFrontmatter): UserS
 		title,
 		linearId,
 		linearUrl,
+		epic,
 		priority,
 		labels,
 		estimate,

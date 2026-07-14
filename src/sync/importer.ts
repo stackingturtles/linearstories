@@ -1,15 +1,15 @@
 import type { LinearClient } from "@linear/sdk";
-import { type CreateIssueInput, createIssue, updateIssue } from "../linear/issues.ts";
+import { EPIC_LABEL, isEpic, validateIssueType } from "../hierarchy.ts";
+import {
+	type CreateIssueInput,
+	createIssue,
+	type UpdateIssueInput,
+	updateIssue,
+} from "../linear/issues.ts";
 import { Resolver } from "../linear/resolvers.ts";
 import { parseMarkdownFile } from "../markdown/parser.ts";
 import { writeBackIds } from "../markdown/writer.ts";
-import type {
-	ImportResult,
-	ImportSummary,
-	ParsedFile,
-	ResolvedConfig,
-	UserStory,
-} from "../types.ts";
+import type { ImportResult, ImportSummary, ResolvedConfig, UserStory } from "../types.ts";
 
 export interface ImportOptions {
 	files: string[];
@@ -20,61 +20,189 @@ export interface ImportOptions {
 	noWriteBack?: boolean;
 }
 
+interface StoryEntry {
+	story: UserStory;
+	filePath: string;
+	index: number;
+}
+
+interface ParsedInput {
+	filePath: string;
+	fileContent: string;
+	entries: StoryEntry[];
+}
+
 /**
- * Import user stories from markdown files into Linear.
+ * Import epics and user stories from markdown files into Linear.
  *
  * Algorithm:
- * 1. Read each file and parse with parseMarkdownFile
- * 2. For each story, resolve names to UUIDs (team, project, labels, assignee, status)
- * 3. If linear_id present -> update, else -> create
- * 4. If not dry-run: make API calls
- * 5. If not no-write-back: write back linear_id and linear_url
- * 6. Continue on failure per story
- * 7. Return ImportSummary
+ * Epics are processed before user stories so a new epic and its children can be
+ * imported together, even when they live in different files or source order.
  */
 export async function importStories(
 	client: LinearClient,
 	options: ImportOptions,
 ): Promise<ImportSummary> {
 	const resolver = new Resolver(client);
-	const results: ImportResult[] = [];
+	const parsedInputs: ParsedInput[] = [];
+	const entries: StoryEntry[] = [];
 
 	for (const filePath of options.files) {
-		// 1. Read and parse the markdown file
 		const fileContent = await Bun.file(filePath).text();
 		const parsed = parseMarkdownFile(fileContent, filePath);
+		const startIndex = entries.length;
+		const fileEntries = parsed.stories.map((story, offset) => ({
+			story,
+			filePath,
+			index: startIndex + offset,
+		}));
+		entries.push(...fileEntries);
+		parsedInputs.push({ filePath, fileContent, entries: fileEntries });
+	}
 
-		// Track write-back updates for this file
-		const writeBackUpdates: Array<{
-			title: string;
-			linearId: string;
-			linearUrl: string;
-		}> = [];
+	const resultsByIndex: Array<ImportResult | undefined> = new Array(entries.length);
+	const referenceIndex = buildReferenceIndex(entries);
+	const processingOrder = [
+		...entries.filter((entry) => isEpic(entry.story)),
+		...entries.filter((entry) => !isEpic(entry.story)),
+	];
+	const invalidDefault = options.config.defaultLabels.includes(EPIC_LABEL)
+		? `The ${EPIC_LABEL} label cannot be configured in defaultLabels because it identifies individual issues as epics`
+		: null;
 
-		// 2. Process each story
-		for (const story of parsed.stories) {
-			const result = await processStory(client, resolver, story, parsed, options);
-			results.push(result);
-
-			// Collect write-back data for newly created stories
-			if (result.action === "created" && result.linearId && result.linearUrl) {
-				writeBackUpdates.push({
-					title: story.title,
-					linearId: result.linearId,
-					linearUrl: result.linearUrl,
-				});
-			}
+	for (const entry of processingOrder) {
+		const validationError = invalidDefault ?? validateIssueType(entry.story);
+		if (validationError) {
+			resultsByIndex[entry.index] = failedResult(entry.story, validationError);
+			continue;
 		}
 
-		// 5. Write back if applicable
-		if (!options.dryRun && !options.noWriteBack && writeBackUpdates.length > 0) {
-			const updatedContent = writeBackIds(filePath, fileContent, writeBackUpdates);
-			await Bun.write(filePath, updatedContent);
+		const parent = await resolveParentReference(
+			resolver,
+			entry,
+			referenceIndex,
+			resultsByIndex,
+			options.dryRun === true,
+		);
+		if (parent.error) {
+			resultsByIndex[entry.index] = failedResult(entry.story, parent.error);
+			continue;
+		}
+
+		resultsByIndex[entry.index] = await processStory(
+			client,
+			resolver,
+			entry.story,
+			options,
+			parent.parentId,
+		);
+	}
+
+	const results = resultsByIndex.filter((result): result is ImportResult => result !== undefined);
+
+	if (!options.dryRun && !options.noWriteBack) {
+		for (const input of parsedInputs) {
+			const writeBackUpdates = input.entries.flatMap((entry) => {
+				const result = resultsByIndex[entry.index];
+				return result?.action === "created" && result.linearId && result.linearUrl
+					? [{ title: entry.story.title, linearId: result.linearId, linearUrl: result.linearUrl }]
+					: [];
+			});
+
+			if (writeBackUpdates.length > 0) {
+				const updatedContent = writeBackIds(input.filePath, input.fileContent, writeBackUpdates);
+				await Bun.write(input.filePath, updatedContent);
+			}
 		}
 	}
 
-	// 7. Build and return summary
 	return buildSummary(results);
+}
+
+function buildReferenceIndex(entries: StoryEntry[]): Map<string, StoryEntry[]> {
+	const index = new Map<string, StoryEntry[]>();
+	for (const entry of entries) {
+		for (const reference of [entry.story.title, entry.story.linearId]) {
+			if (!reference) {
+				continue;
+			}
+			const matches = index.get(reference) ?? [];
+			if (!matches.includes(entry)) {
+				matches.push(entry);
+			}
+			index.set(reference, matches);
+		}
+	}
+	return index;
+}
+
+async function resolveParentReference(
+	resolver: Resolver,
+	entry: StoryEntry,
+	referenceIndex: Map<string, StoryEntry[]>,
+	results: Array<ImportResult | undefined>,
+	dryRun: boolean,
+): Promise<{ parentId?: string; error?: string }> {
+	const reference = entry.story.epic;
+	if (!reference) {
+		return {};
+	}
+
+	const localMatches = referenceIndex.get(reference) ?? [];
+	if (localMatches.length > 1) {
+		return { error: `Epic reference "${reference}" is ambiguous within the imported files` };
+	}
+
+	const localEpic = localMatches[0];
+	if (localEpic) {
+		if (!isEpic(localEpic.story)) {
+			return { error: `Referenced local issue "${reference}" does not have the Epic label` };
+		}
+
+		const epicResult = results[localEpic.index];
+		if (!epicResult || epicResult.action === "failed") {
+			return {
+				error: `Cannot link to epic "${reference}" because that epic failed to import${epicResult?.error ? `: ${epicResult.error}` : ""}`,
+			};
+		}
+
+		if (dryRun) {
+			return {};
+		}
+
+		const parentId = epicResult.linearId ?? localEpic.story.linearId;
+		return parentId
+			? { parentId }
+			: { error: `Cannot link to epic "${reference}" because it has no Linear identifier` };
+	}
+
+	if (!isLinearIssueReference(reference)) {
+		return {
+			error: `Epic title "${reference}" was not found in the imported files; use an exact local epic title or a Linear identifier such as ENG-42`,
+		};
+	}
+
+	if (dryRun) {
+		return {};
+	}
+
+	try {
+		const resolved = await resolver.resolveEpicIssue(reference);
+		return { parentId: resolved.identifier };
+	} catch (error) {
+		return { error: error instanceof Error ? error.message : String(error) };
+	}
+}
+
+function isLinearIssueReference(reference: string): boolean {
+	return (
+		/^[A-Z][A-Z0-9]*-\d+$/i.test(reference) ||
+		/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(reference)
+	);
+}
+
+function failedResult(story: UserStory, error: string): ImportResult {
+	return { story, action: "failed", error };
 }
 
 /**
@@ -84,8 +212,8 @@ async function processStory(
 	client: LinearClient,
 	resolver: Resolver,
 	story: UserStory,
-	_parsed: ParsedFile,
 	options: ImportOptions,
+	parentId?: string,
 ): Promise<ImportResult> {
 	// Dry-run: skip all API calls
 	if (options.dryRun) {
@@ -116,8 +244,15 @@ async function processStory(
 		}
 
 		// Merge labels: story.labels + config.defaultLabels (deduplicated)
-		const allLabels = deduplicateLabels(story.labels, options.config.defaultLabels);
+		const storyLabels = isEpic(story) ? [EPIC_LABEL, ...story.labels] : story.labels;
+		const allLabels = deduplicateLabels(storyLabels, options.config.defaultLabels);
 		const labelIds = allLabels.length > 0 ? await resolver.resolveLabelIds(allLabels) : undefined;
+		if (isEpic(story)) {
+			const epicLabelIds = await resolver.resolveLabelIds([EPIC_LABEL]);
+			if (epicLabelIds.length !== 1) {
+				throw new Error(`Required Linear label not found: "${EPIC_LABEL}"`);
+			}
+		}
 
 		// Resolve assignee
 		let assigneeId: string | undefined;
@@ -133,10 +268,28 @@ async function processStory(
 
 		if (story.linearId) {
 			// UPDATE path: story already has a linear_id
-			return await updateStory(client, story, teamId, projectId, labelIds, assigneeId, stateId);
+			return await updateStory(
+				client,
+				story,
+				teamId,
+				projectId,
+				labelIds,
+				assigneeId,
+				stateId,
+				parentId,
+			);
 		}
 		// CREATE path: story does not have a linear_id
-		return await createStory(client, story, teamId, projectId, labelIds, assigneeId, stateId);
+		return await createStory(
+			client,
+			story,
+			teamId,
+			projectId,
+			labelIds,
+			assigneeId,
+			stateId,
+			parentId,
+		);
 	} catch (error) {
 		return {
 			story,
@@ -157,6 +310,7 @@ async function createStory(
 	labelIds: string[] | undefined,
 	assigneeId: string | undefined,
 	stateId: string | undefined,
+	parentId: string | undefined,
 ): Promise<ImportResult> {
 	const input: CreateIssueInput = {
 		title: story.title,
@@ -184,6 +338,9 @@ async function createStory(
 	if (stateId) {
 		input.stateId = stateId;
 	}
+	if (parentId) {
+		input.parentId = parentId;
+	}
 
 	const result = await createIssue(client, input);
 
@@ -206,15 +363,15 @@ async function updateStory(
 	labelIds: string[] | undefined,
 	assigneeId: string | undefined,
 	stateId: string | undefined,
+	parentId: string | undefined,
 ): Promise<ImportResult> {
-	// We need to look up the internal UUID for the issue by its identifier.
-	// The linear_id in the story is the identifier (e.g., "ENG-42"), but
-	// updateIssue needs the internal UUID. We use the identifier to find
-	// the issue first.
+	// Linear accepts a human-readable issue identifier for updates.
 	const issueIdentifier = story.linearId as string;
 
-	const updateInput: Record<string, unknown> = {
+	const updateInput: UpdateIssueInput = {
 		title: story.title,
+		labelIds: labelIds ?? [],
+		parentId: parentId ?? null,
 	};
 
 	if (story.body) {
@@ -222,9 +379,6 @@ async function updateStory(
 	}
 	if (projectId) {
 		updateInput.projectId = projectId;
-	}
-	if (labelIds && labelIds.length > 0) {
-		updateInput.labelIds = labelIds;
 	}
 	if (assigneeId) {
 		updateInput.assigneeId = assigneeId;
@@ -238,7 +392,6 @@ async function updateStory(
 	if (stateId) {
 		updateInput.stateId = stateId;
 	}
-
 	await updateIssue(client, issueIdentifier, updateInput);
 
 	return {
