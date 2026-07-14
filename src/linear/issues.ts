@@ -12,6 +12,7 @@ export interface CreateIssueInput {
 	priority?: number;
 	estimate?: number;
 	stateId?: string;
+	parentId?: string;
 }
 
 export interface CreateIssueResult {
@@ -79,6 +80,9 @@ export async function createIssue(
 		}
 		if (input.stateId !== undefined) {
 			createInput.stateId = input.stateId;
+		}
+		if (input.parentId !== undefined) {
+			createInput.parentId = input.parentId;
 		}
 
 		const typedClient = client as unknown as LinearClientWithMethods;
@@ -174,12 +178,13 @@ export async function fetchIssues(
  * Resolve async fields on a Linear issue node into a plain LinearIssueData.
  */
 async function resolveIssueFields(node: Record<string, unknown>): Promise<LinearIssueData> {
-	const [state, assignee, labels, project, team] = await Promise.all([
+	const [state, assignee, labels, parent, project, team] = await Promise.all([
 		node.state as Promise<unknown>,
 		node.assignee as Promise<unknown>,
 		typeof node.labels === "function"
 			? (node.labels as () => Promise<unknown>)()
 			: (node.labels as Promise<unknown>),
+		node.parent as Promise<unknown>,
 		node.project as Promise<unknown>,
 		node.team as Promise<unknown>,
 	]);
@@ -195,6 +200,7 @@ async function resolveIssueFields(node: Record<string, unknown>): Promise<Linear
 		state: (state as Record<string, unknown>) ?? undefined,
 		assignee: (assignee as Record<string, unknown>) ?? undefined,
 		labels: (labels as { nodes: Array<Record<string, unknown>> }) ?? { nodes: [] },
+		parent: (parent as { id: string; identifier: string; title: string }) ?? undefined,
 		project: (project as Record<string, unknown>) ?? undefined,
 		team: team as Record<string, unknown>,
 	};

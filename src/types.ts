@@ -5,6 +5,8 @@ export interface UserStory {
 	linearId: string | null;
 	/** Linear issue URL, null if not yet imported */
 	linearUrl: string | null;
+	/** Parent epic title or Linear identifier, null for epics and standalone stories */
+	epic: string | null;
 	/** Priority level: 0=None, 1=Urgent, 2=High, 3=Normal, 4=Low */
 	priority: number | null;
 	/** Label names to apply */
@@ -80,6 +82,7 @@ export interface LinearIssueData {
 	state: { name: string } | undefined;
 	assignee: { email: string; displayName: string } | undefined;
 	labels: { nodes: Array<{ name: string }> };
+	parent: { id: string; identifier: string; title: string } | undefined;
 	project: { name: string } | undefined;
 	team: { name: string; key: string };
 }

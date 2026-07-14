@@ -12,6 +12,7 @@ describe("smoke test", () => {
 			title: "Test story",
 			linearId: null,
 			linearUrl: null,
+			epic: null,
 			priority: null,
 			labels: [],
 			estimate: null,

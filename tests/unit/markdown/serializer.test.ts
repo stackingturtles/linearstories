@@ -7,6 +7,7 @@ function makeStory(overrides: Partial<UserStory> = {}): UserStory {
 		title: "As a user, I want to log in so that I can access my account",
 		linearId: null,
 		linearUrl: null,
+		epic: null,
 		priority: null,
 		labels: [],
 		estimate: null,
@@ -113,6 +114,12 @@ describe("serializeStories", () => {
 
 		expect(result).toContain("linear_id: ENG-42");
 		expect(result).toContain("linear_url: https://linear.app/myorg/issue/ENG-42");
+	});
+
+	test("includes the parent epic reference when present", () => {
+		const result = serializeStories([makeStory({ epic: "ENG-10" })]);
+
+		expect(result).toContain("epic: ENG-10");
 	});
 
 	// ------------------------------------------------------------------

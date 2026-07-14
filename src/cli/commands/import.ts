@@ -32,7 +32,7 @@ function printSummary(summary: ImportSummary): void {
 	console.log(`  Skipped: ${chalk.yellow(String(summary.skipped))}`);
 	console.log(`  Failed:  ${chalk.red(String(summary.failed))}`);
 
-	// Print details for created/updated stories
+	// Print details for created/updated issues
 	for (const result of summary.results) {
 		if (result.action === "created" && result.linearId) {
 			console.log(chalk.green(`  + ${result.linearId} ${result.story.title}`));
@@ -66,7 +66,7 @@ function handleError(error: unknown): never {
 export function registerImportCommand(program: Command) {
 	program
 		.command("import")
-		.description("Import user stories from markdown files to Linear")
+		.description("Import epics and user stories from markdown files to Linear")
 		.argument("<files...>", "Markdown file paths or glob patterns")
 		.option("-c, --config <path>", "Config file path")
 		.option("--context <name>", "Select a named context from multi-context config")

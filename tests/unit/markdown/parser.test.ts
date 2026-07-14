@@ -106,6 +106,25 @@ describe("parseMarkdownFile", () => {
 
 		expect(story.linearId).toBeNull();
 		expect(story.linearUrl).toBeNull();
+		expect(story.epic).toBeNull();
+	});
+
+	test("parses an epic parent reference from story metadata", () => {
+		const content = `## Child story
+
+\`\`\`yaml
+epic: ENG-42
+labels: [Feature]
+\`\`\`
+
+Description.
+
+### Acceptance Criteria
+
+- [ ] Child behavior works`;
+		const result = parseMarkdownFile(content, "child.md");
+
+		expect(result.stories[0]?.epic).toBe("ENG-42");
 	});
 
 	// ------------------------------------------------------------------
