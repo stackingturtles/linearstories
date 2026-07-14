@@ -214,6 +214,7 @@ async function updateStory(
 	const issueIdentifier = story.linearId as string;
 	const updateInput: UpdateIssueInput = {
 		title: story.title,
+		teamId: plan.teamId as string,
 		parentId: parentId ?? null,
 	};
 

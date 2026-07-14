@@ -813,6 +813,31 @@ describe("importStories", () => {
 		expect(projectNames).toEqual(["OptionsProject"]);
 	});
 
+	test("moves an existing issue to the CLI-overridden team", async () => {
+		const filePath = writeTmpFile("team-update.md", markdownExistingStories);
+		const overriddenTeamId = "team-options";
+		const updateIssueFn = mock(async () => ({
+			success: true,
+			issue: Promise.resolve({ identifier: "ENG-42" }),
+		}));
+		const client = createMockClient({
+			teams: async (variables: unknown) => {
+				const input = variables as { filter: { name: { eq: string } } };
+				expect(input.filter.name.eq).toBe("OptionsTeam");
+				return { nodes: [{ id: overriddenTeamId }] };
+			},
+			updateIssue: updateIssueFn,
+		});
+
+		await importStories(client, {
+			files: [filePath],
+			config: defaultConfig,
+			team: "OptionsTeam",
+		});
+
+		expect(updateIssueFn.mock.calls[0]?.[1]).toMatchObject({ teamId: overriddenTeamId });
+	});
+
 	// =========================================================================
 	// Label merging with config.defaultLabels
 	// =========================================================================
