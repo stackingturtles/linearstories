@@ -5,7 +5,7 @@ import { loadConfig } from "../../config/loader.ts";
 import { ConfigError, LinearApiError, ParseError, ResolverError } from "../../errors.ts";
 import { createLinearClient } from "../../linear/client.ts";
 import { importStories } from "../../sync/importer.ts";
-import type { ImportSummary } from "../../types.ts";
+import type { ImportPreflightReport, ImportSummary, LabelPreflightStatus } from "../../types.ts";
 
 /**
  * Resolve an array of file paths / glob patterns into deduplicated file paths.
@@ -24,6 +24,10 @@ async function resolveGlobs(patterns: string[]): Promise<string[]> {
  * Print a formatted import summary to stdout.
  */
 function printSummary(summary: ImportSummary): void {
+	if (summary.preflight) {
+		printPreflight(summary.preflight);
+	}
+
 	console.log("");
 	console.log(chalk.bold("Import Summary"));
 	console.log(`  Total:   ${summary.total}`);
@@ -38,10 +42,45 @@ function printSummary(summary: ImportSummary): void {
 			console.log(chalk.green(`  + ${result.linearId} ${result.story.title}`));
 		} else if (result.action === "updated" && result.linearId) {
 			console.log(chalk.blue(`  ~ ${result.linearId} ${result.story.title}`));
-		} else if (result.action === "failed") {
+		} else if (result.action === "failed" && summary.preflight?.passed !== false) {
 			console.log(chalk.red(`  x ${result.story.title}: ${result.error}`));
 		}
 	}
+}
+
+function printPreflight(report: ImportPreflightReport): void {
+	console.log("");
+	console.log(chalk.bold("Remote Preflight"));
+	const teams = [...new Set(report.labels.map((label) => label.team))];
+	const statuses: Array<{ status: LabelPreflightStatus; title: string }> = [
+		{ status: "existing", title: "Existing" },
+		{ status: "created", title: "Created" },
+		{ status: "missing", title: "Missing" },
+		{ status: "conflicting", title: "Conflicting" },
+		{ status: "skipped", title: "Skipped" },
+	];
+
+	for (const team of teams) {
+		console.log(`  Team: ${team}`);
+		for (const { status, title } of statuses) {
+			const labels = report.labels.filter(
+				(label) => label.team === team && label.status === status,
+			);
+			if (labels.length === 0) continue;
+			const values = labels.map((label) => {
+				const scope = label.scope ? ` (${label.scope})` : "";
+				const detail = label.detail ? ` - ${label.detail}` : "";
+				return `${label.name}${scope}${detail}`;
+			});
+			console.log(`    ${title}: ${values.join(", ")}`);
+		}
+	}
+
+	for (const warning of report.warnings) console.log(chalk.yellow(`  ! ${warning}`));
+	for (const error of report.errors) console.log(chalk.red(`  x ${error}`));
+	console.log(
+		report.passed ? chalk.green("  Preflight passed.") : chalk.red("  Preflight failed."),
+	);
 }
 
 /**
@@ -70,9 +109,20 @@ export function registerImportCommand(program: Command) {
 		.argument("<files...>", "Markdown file paths or glob patterns")
 		.option("-c, --config <path>", "Config file path")
 		.option("--context <name>", "Select a named context from multi-context config")
-		.option("-t, --team <name>", "Override default team")
-		.option("-p, --project <name>", "Override default project")
+		.option("-t, --team <name>", "Override file and config team")
+		.option("-p, --project <name>", "Override file and config project")
 		.option("--dry-run", "Validate without calling Linear", false)
+		.option("--preflight", "Check remote resources without creating labels or issues", false)
+		.option(
+			"--create-missing-labels",
+			"Create missing team-scoped labels after remote preflight",
+			false,
+		)
+		.option(
+			"--allow-missing-labels",
+			"Import while explicitly skipping labels unavailable to the target team",
+			false,
+		)
 		.option("--no-write-back", "Skip writing Linear IDs back to markdown")
 		.action(async (filePatterns: string[], options) => {
 			try {
@@ -96,6 +146,9 @@ export function registerImportCommand(program: Command) {
 					team: options.team,
 					project: options.project,
 					dryRun: options.dryRun,
+					preflight: options.preflight,
+					createMissingLabels: options.createMissingLabels,
+					allowMissingLabels: options.allowMissingLabels,
 					noWriteBack: !options.writeBack, // Commander converts --no-write-back to writeBack: false
 				});
 

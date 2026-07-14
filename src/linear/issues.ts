@@ -15,7 +15,7 @@ export interface CreateIssueInput {
 	parentId?: string;
 }
 
-export type UpdateIssueInput = Partial<Omit<CreateIssueInput, "teamId" | "parentId">> & {
+export type UpdateIssueInput = Partial<Omit<CreateIssueInput, "parentId">> & {
 	parentId?: string | null;
 };
 

@@ -119,7 +119,7 @@ team: "Engineering"
 ---
 ```
 
-Both fields are optional. They can be overridden per-story or via CLI flags.
+Both fields are optional. CLI `--team` and `--project` flags override file frontmatter.
 
 ### Epics and user stories
 
@@ -285,8 +285,8 @@ The config file is a JSON object with the following fields:
 | Field            | Type     | Required | Description                                              |
 |----------------- |--------- |--------- |--------------------------------------------------------- |
 | `apiKey`         | string   | Yes*     | Linear API key. Can also be set via `LINEAR_API_KEY` env var. |
-| `defaultTeam`    | string   | No       | Default team name for stories that do not specify one.   |
-| `defaultProject` | string   | No       | Default project name for stories that do not specify one.|
+| `defaultTeam`    | string   | No       | Default team name for files that do not specify one.      |
+| `defaultProject` | string   | No       | Default project name for files that do not specify one.   |
 | `defaultLabels`  | string[] | No       | Labels applied to every imported story. Merged with per-story labels. |
 
 *Required either in the config file or as the `LINEAR_API_KEY` environment variable.
@@ -381,10 +381,15 @@ linearstories import <files...> [options]
 |--------------------------- |---------------------------------------------------------------------- |
 | `-c, --config <path>`      | Path to a config file                                                |
 | `--context <name>`         | Select a named context from a multi-context config                   |
-| `-t, --team <name>`        | Override the default team                                            |
-| `-p, --project <name>`     | Override the default project                                         |
+| `-t, --team <name>`        | Override the file and configured default team                        |
+| `-p, --project <name>`     | Override the file and configured default project                     |
 | `--dry-run`                | Validate and parse without making any Linear API calls               |
+| `--preflight`              | Read-only validation of remote teams, projects, labels, states, assignees, and epic references |
+| `--create-missing-labels`  | Create unresolved labels for the target team after preflight, then import |
+| `--allow-missing-labels`   | Explicitly skip unavailable labels and continue the import           |
 | `--no-write-back`          | Skip writing `linear_id` and `linear_url` back to the markdown files |
+
+`--dry-run` cannot be combined with remote validation or label options. `--preflight` cannot be combined with `--create-missing-labels`, and the two label handling modes are mutually exclusive.
 
 **Examples:**
 
@@ -400,6 +405,15 @@ linearstories import -t "Platform" stories/infra/*.md
 
 # Dry run to validate without creating issues
 linearstories import --dry-run stories/*.md
+
+# Check Linear resources without creating labels or issues
+linearstories import --preflight stories/*.md
+
+# Provision missing team labels after a successful preflight, then import
+linearstories import --create-missing-labels stories/*.md
+
+# Explicitly import without labels that are unavailable to the target team
+linearstories import --allow-missing-labels stories/*.md
 
 # Import without modifying the source files
 linearstories import --no-write-back stories/*.md
@@ -502,10 +516,11 @@ linearstories import stories/login.md
 The CLI:
 1. Parses every input file and extracts epics and user stories.
 2. Validates the issue types and local hierarchy.
-3. Creates or updates epics before user stories, regardless of source file order.
-4. Resolves team, project, label, assignee, status, and parent references.
-5. Creates or updates each issue and sets `parentId` for child stories.
-6. Writes the `linear_id` and `linear_url` back into each markdown file.
+3. Runs a complete remote preflight for teams, projects, labels, assignees, workflow states, and existing epic references.
+4. Aborts before issue mutation if any required remote resource is unresolved.
+5. Creates or updates epics before user stories, regardless of source file order.
+6. Creates or updates each issue and sets `parentId` for child stories.
+7. Writes the `linear_id` and `linear_url` back into each markdown file.
 
 ### Step 3: Inspect the write-back
 
@@ -578,6 +593,16 @@ Per-story labels and `defaultLabels` from the config are merged and deduplicated
 
 The exact label `Epic` is reserved as the issue-type discriminator and cannot be configured in `defaultLabels`.
 
+Labels are resolved once per effective team. An exact team-scoped label is preferred over an exact workspace label. A label owned only by another team is never applied, and case-only or grouped-label conflicts fail preflight with an explicit diagnostic.
+
+Missing labels fail by default. `--create-missing-labels` explicitly creates team-scoped labels only after every other remote prerequisite has passed. `--allow-missing-labels` explicitly skips unavailable ordinary labels; the reserved `Epic` label can never be skipped. When updating an existing issue in this mode, label synchronization is omitted so existing Linear labels are not accidentally cleared.
+
+### Validation and preflight modes
+
+`--dry-run` performs local parsing, issue-type, and hierarchy validation without calling Linear. Use it when remote validation is unnecessary or network access is unavailable. The CLI still requires a syntactically valid API key in its resolved configuration.
+
+`--preflight` performs read-only remote validation and never creates labels or issues. A normal import runs the same remote preflight automatically before issue mutation. If preflight or authorized label provisioning fails, no issues are created or updated. Once mutation begins, an issue API failure can still leave earlier successful issue mutations in place; rerun the import after correcting the API failure.
+
 ### Epic hierarchy resolution
 
 A user story can set `epic` to either an existing Linear identifier such as `ENG-42` or the exact title of an epic included anywhere in the same import command. Local epics are processed first. Existing Linear parents are verified to have the `Epic` label and to be top-level issues before the child is linked.
@@ -588,8 +613,8 @@ The importer rejects nested epics, epics with acceptance criteria, user stories 
 
 For both team and project, the CLI resolves in this order:
 
-1. Value specified in the story metadata block
-2. Value passed via CLI flag (`--team`, `--project`)
+1. Value passed via CLI flag (`--team`, `--project`)
+2. Value specified in file frontmatter
 3. Default from config file (`defaultTeam`, `defaultProject`)
 
 ## Export workflow
@@ -752,6 +777,7 @@ src/
     writer.ts             Write-back of linear_id/linear_url into existing files
   sync/
     importer.ts           Import orchestration
+    preflight.ts          Atomic remote validation and import planning
     exporter.ts           Export orchestration
   types.ts                Shared TypeScript interfaces
   errors.ts               Custom error classes
@@ -766,6 +792,8 @@ docs/
 tests/
   unit/                   Unit tests
   integration/            Integration tests
+website/
+  llms.txt                Agent-oriented CLI reference
 ```
 
 ## License

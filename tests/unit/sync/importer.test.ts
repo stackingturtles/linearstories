@@ -183,6 +183,7 @@ function createMockClient(overrides: Record<string, unknown> = {}) {
 		projects: async () => ({ nodes: [{ id: PROJECT_UUID }] }),
 		issueLabels: async () => ({ nodes: [{ id: LABEL_UUID_1 }] }),
 		issueLabel: async () => ({ id: "parent-id", name: "Unknown" }),
+		createIssueLabel: async () => ({ success: true, issueLabelId: LABEL_UUID_1 }),
 		users: async () => ({ nodes: [{ id: USER_UUID }] }),
 		workflowStates: async () => ({ nodes: [{ id: STATE_UUID }] }),
 		createIssue: async () => {
@@ -780,22 +781,61 @@ describe("importStories", () => {
 	// Team/project resolution from various sources
 	// =========================================================================
 
-	test("uses story.team over options.team over config.defaultTeam", async () => {
-		// The markdown has team: "Engineering" in frontmatter,
-		// which gets inherited by each story.
+	test("uses CLI team and project overrides before document metadata and config defaults", async () => {
 		const filePath = writeTmpFile("team.md", markdownNewStories);
-		const teamsFn = mock(async () => ({ nodes: [{ id: TEAM_UUID }] }));
-		const client = createMockClient({ teams: teamsFn });
+		const teamNames: string[] = [];
+		const projectNames: string[] = [];
+		const client = createMockClient({
+			teams: async (variables: unknown) => {
+				const input = variables as { filter: { name: { eq: string } } };
+				teamNames.push(input.filter.name.eq);
+				return { nodes: [{ id: TEAM_UUID }] };
+			},
+			projects: async (variables: unknown) => {
+				const input = variables as { filter: { name: { eq: string } } };
+				projectNames.push(input.filter.name.eq);
+				return { nodes: [{ id: PROJECT_UUID }] };
+			},
+		});
 
 		await importStories(client, {
 			files: [filePath],
-			config: { ...defaultConfig, defaultTeam: "FallbackTeam" },
+			config: {
+				...defaultConfig,
+				defaultTeam: "FallbackTeam",
+				defaultProject: "FallbackProject",
+			},
+			team: "OptionsTeam",
+			project: "OptionsProject",
+		});
+
+		expect(teamNames).toEqual(["OptionsTeam"]);
+		expect(projectNames).toEqual(["OptionsProject"]);
+	});
+
+	test("moves an existing issue to the CLI-overridden team", async () => {
+		const filePath = writeTmpFile("team-update.md", markdownExistingStories);
+		const overriddenTeamId = "team-options";
+		const updateIssueFn = mock(async () => ({
+			success: true,
+			issue: Promise.resolve({ identifier: "ENG-42" }),
+		}));
+		const client = createMockClient({
+			teams: async (variables: unknown) => {
+				const input = variables as { filter: { name: { eq: string } } };
+				expect(input.filter.name.eq).toBe("OptionsTeam");
+				return { nodes: [{ id: overriddenTeamId }] };
+			},
+			updateIssue: updateIssueFn,
+		});
+
+		await importStories(client, {
+			files: [filePath],
+			config: defaultConfig,
 			team: "OptionsTeam",
 		});
 
-		// Since the markdown has team: "Engineering", that should be resolved
-		// (story-level team comes from frontmatter inheritance)
-		expect(teamsFn).toHaveBeenCalled();
+		expect(updateIssueFn.mock.calls[0]?.[1]).toMatchObject({ teamId: overriddenTeamId });
 	});
 
 	// =========================================================================
@@ -806,10 +846,10 @@ describe("importStories", () => {
 		const filePath = writeTmpFile("labels.md", markdownNewStories);
 		const resolvedLabels: string[][] = [];
 		const labelsFn = mock(async (filter: unknown) => {
-			const f = filter as { filter: { name: { eq: string } } };
-			const name = f.filter.name.eq;
+			const f = filter as { filter: { name: { eqIgnoreCase: string } } };
+			const name = f.filter.name.eqIgnoreCase;
 			resolvedLabels.push([name]);
-			return { nodes: [{ id: `label-${name}` }] };
+			return { nodes: [{ id: `label-${name}`, name }] };
 		});
 		const client = createMockClient({ issueLabels: labelsFn });
 

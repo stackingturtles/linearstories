@@ -24,6 +24,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="linearstories documentation for agents" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -267,9 +268,9 @@ Users need secure access to protected features.
         </div>
         <h3>Import to Linear</h3>
         <p>
-          Run <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">linearstories import</code>
-          to create epics first, push every story as a native sub-issue, and set
-          labels, priority, estimates, and assignees.
+          Run <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">linearstories import</code>.
+          A complete remote preflight checks teams, projects, labels, and people
+          before epics and their native sub-issues are changed.
         </p>
       </div>
 
@@ -324,8 +325,8 @@ Users need secure access to protected features.
         <h3>Import to Linear</h3>
         <p>
           Push Markdown epics and user stories into Linear as parent issues and
-          sub-issues. Labels, priority, estimates, and assignees are all set
-          from metadata.
+          sub-issues. Team-aware label resolution and atomic preflight prevent
+          incomplete issue sets and cross-team label mistakes.
         </p>
       </div>
 
@@ -504,7 +505,7 @@ Users need secure access to protected features.
 
         <div class="template-field">
           <span class="template-field-key">project</span>
-          <span class="template-field-desc">Maps to a Linear project. Creates it if it does not exist.</span>
+          <span class="template-field-desc">Maps to an existing Linear project and is verified before import.</span>
         </div>
 
         <div class="template-field">
@@ -519,7 +520,7 @@ Users need secure access to protected features.
 
         <div class="template-field">
           <span class="template-field-key">labels</span>
-          <span class="template-field-desc">The exact Epic label identifies a top-level epic.</span>
+          <span class="template-field-desc">Team-aware exact matches; the Epic label identifies a top-level epic.</span>
         </div>
 
         <div class="template-field">
@@ -624,9 +625,10 @@ Users need secure access to protected features.
           only for a one-off trial without installing.
         </div>
         <div class="tip">
-          <strong>Dry run first</strong>
-          Add the <code>--dry-run</code> flag to any import command to
-          preview what would be created in Linear without making any changes.
+          <strong>Preflight first</strong>
+          Use <code>--dry-run</code> for local Markdown checks and
+          <code>--preflight</code> for read-only validation of Linear resources.
+          Normal imports run remote preflight automatically.
         </div>
       </div>
     </div>
@@ -664,6 +666,7 @@ Users need secure access to protected features.
         </span>
         <span class="t-line t-out">Parsing stories/*.md...</span>
         <span class="t-line t-out">Found 1 epic and 2 user stories</span>
+        <span class="t-line t-out">Remote preflight passed: team, project, labels, and hierarchy verified</span>
         <span class="t-line t-out">Importing to project "Q1 2026 Release"...</span>
         <span class="t-line t-success">Done. 3 issues created, 2 sub-issues linked.</span>
         <br />
@@ -715,6 +718,7 @@ Users need secure access to protected features.
       <li><a href="https://github.com/stackingturtles/linearstories" target="_blank" rel="noopener">GitHub</a></li>
       <li><a href="https://github.com/stackingturtles/linearstories/releases" target="_blank" rel="noopener">Releases</a></li>
       <li><a href="https://github.com/stackingturtles/linearstories/issues" target="_blank" rel="noopener">Issues</a></li>
+      <li><a href="/llms.txt">Agent docs</a></li>
       <li><a href="https://github.com/stackingturtles/linearstories/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a></li>
     </ul>
 

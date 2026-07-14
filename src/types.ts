@@ -95,6 +95,23 @@ export interface ImportResult {
 	error?: string;
 }
 
+export type LabelPreflightStatus = "existing" | "created" | "missing" | "conflicting" | "skipped";
+
+export interface LabelPreflightResult {
+	team: string;
+	name: string;
+	status: LabelPreflightStatus;
+	scope?: "team" | "workspace";
+	detail?: string;
+}
+
+export interface ImportPreflightReport {
+	passed: boolean;
+	labels: LabelPreflightResult[];
+	errors: string[];
+	warnings: string[];
+}
+
 export interface ImportSummary {
 	total: number;
 	created: number;
@@ -102,4 +119,5 @@ export interface ImportSummary {
 	failed: number;
 	skipped: number;
 	results: ImportResult[];
+	preflight?: ImportPreflightReport;
 }

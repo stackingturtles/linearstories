@@ -11,10 +11,20 @@ function isEmail(value: string): boolean {
 	return value.includes("@");
 }
 
-interface ResolvedLabel {
+export interface ResolvedLabel {
 	id: string;
+	name: string;
 	parentId: string | undefined;
+	scope: "team" | "workspace";
 }
+
+export type LabelResolution =
+	| { status: "existing"; label: ResolvedLabel }
+	| {
+			status: "missing" | "case-conflict" | "cross-team" | "conflicting";
+			detail: string;
+			provisionable: boolean;
+	  };
 
 export interface ResolvedEpicIssue {
 	id: string;
@@ -25,7 +35,7 @@ export class Resolver {
 	private client: LinearClient;
 	private teamCache = new Map<string, string>();
 	private projectCache = new Map<string, string>();
-	private labelCache = new Map<string, ResolvedLabel>();
+	private labelCache = new Map<string, LabelResolution>();
 	private groupNameCache = new Map<string, string>();
 	private epicIssueCache = new Map<string, ResolvedEpicIssue>();
 	private userCache = new Map<string, string | undefined>();
@@ -93,73 +103,112 @@ export class Resolver {
 		return project.id;
 	}
 
-	/**
-	 * Resolve an array of label names to their UUIDs.
-	 * Warns for any labels that cannot be found and skips them.
-	 * Returns an empty array for empty input.
-	 */
-	async resolveLabelIds(names: string[]): Promise<string[]> {
-		if (names.length === 0) {
-			return [];
+	/** Resolve one label for a target team without selecting labels owned by other teams. */
+	async resolveLabel(name: string, teamId: string): Promise<LabelResolution> {
+		const cacheKey = `${teamId}:${name}`;
+		const cached = this.labelCache.get(cacheKey);
+		if (cached) {
+			return cached;
 		}
 
-		const resolved: Array<{ name: string; label: ResolvedLabel }> = [];
+		const result = await this.client.issueLabels({
+			filter: { name: { eqIgnoreCase: name } },
+		});
+		const labels = result.nodes.map((label) => {
+			const value = label as unknown as {
+				id: string;
+				name?: string;
+				teamId?: string;
+				parentId?: string;
+				isGroup?: boolean;
+			};
+			return {
+				id: value.id,
+				name: value.name ?? name,
+				teamId: value.teamId,
+				parentId: value.parentId,
+				isGroup: value.isGroup === true,
+			};
+		});
 
-		for (const name of names) {
-			const cached = this.labelCache.get(name);
-			if (cached) {
-				resolved.push({ name, label: cached });
-				continue;
+		const exact = labels.filter((label) => label.name === name);
+		const exactTeam = exact.filter((label) => label.teamId === teamId);
+		const exactWorkspace = exact.filter((label) => label.teamId === undefined);
+		const selected = exactTeam[0] ?? exactWorkspace[0];
+
+		let resolution: LabelResolution;
+		if (exactTeam.length > 1 || (exactTeam.length === 0 && exactWorkspace.length > 1)) {
+			resolution = {
+				status: "conflicting",
+				detail: `Multiple applicable labels named "${name}" were found`,
+				provisionable: false,
+			};
+		} else if (selected?.isGroup) {
+			resolution = {
+				status: "conflicting",
+				detail: `"${name}" is a label group and cannot be applied to issues`,
+				provisionable: false,
+			};
+		} else if (selected) {
+			resolution = {
+				status: "existing",
+				label: {
+					id: selected.id,
+					name,
+					parentId: selected.parentId,
+					scope: selected.teamId === teamId ? "team" : "workspace",
+				},
+			};
+		} else {
+			const caseOnly = labels.filter(
+				(label) => label.name !== name && label.name.toLowerCase() === name.toLowerCase(),
+			);
+			const applicableCaseOnly = caseOnly.filter(
+				(label) => label.teamId === teamId || label.teamId === undefined,
+			);
+			if (caseOnly.length > 0) {
+				resolution = {
+					status: "case-conflict",
+					detail: `Case-only label match found: ${formatLabelMatches(caseOnly)}`,
+					provisionable: applicableCaseOnly.length === 0,
+				};
+			} else if (exact.length > 0) {
+				resolution = {
+					status: "cross-team",
+					detail: `Exact label "${name}" exists only on another team`,
+					provisionable: true,
+				};
+			} else {
+				resolution = {
+					status: "missing",
+					detail: `Label "${name}" does not exist for the target team or workspace`,
+					provisionable: true,
+				};
 			}
-
-			const result = await this.client.issueLabels({
-				filter: { name: { eq: name } },
-			});
-
-			const label = result.nodes[0];
-			if (!label) {
-				console.warn(`Label not found, skipping: "${name}"`);
-				continue;
-			}
-
-			const parentId = (label as unknown as { parentId?: string }).parentId;
-			const entry: ResolvedLabel = { id: label.id, parentId };
-			this.labelCache.set(name, entry);
-			resolved.push({ name, label: entry });
 		}
 
-		return this.filterGroupConflicts(resolved);
+		this.labelCache.set(cacheKey, resolution);
+		return resolution;
 	}
 
-	private async filterGroupConflicts(
-		resolved: Array<{ name: string; label: ResolvedLabel }>,
-	): Promise<string[]> {
-		const seenGroups = new Map<string, string>(); // groupId → first label name
-		const ids: string[] = [];
-
-		for (const { name, label } of resolved) {
-			if (label.parentId === undefined) {
-				ids.push(label.id);
-				continue;
-			}
-
-			const existing = seenGroups.get(label.parentId);
-			if (existing) {
-				const groupName = await this.resolveGroupName(label.parentId);
-				console.warn(
-					`Label "${name}" conflicts with "${existing}" (both in group "${groupName}"), skipping`,
-				);
-				continue;
-			}
-
-			seenGroups.set(label.parentId, name);
-			ids.push(label.id);
+	/** Create a team-scoped label after preflight has established that it is safe to do so. */
+	async createTeamLabel(name: string, teamId: string): Promise<ResolvedLabel> {
+		const payload = await this.client.createIssueLabel({ name, teamId });
+		if (!payload.success || !payload.issueLabelId) {
+			throw new ResolverError(`Linear did not create label "${name}"`);
 		}
 
-		return ids;
+		const label: ResolvedLabel = {
+			id: payload.issueLabelId,
+			name,
+			parentId: undefined,
+			scope: "team",
+		};
+		this.labelCache.set(`${teamId}:${name}`, { status: "existing", label });
+		return label;
 	}
 
-	private async resolveGroupName(parentId: string): Promise<string> {
+	async resolveGroupName(parentId: string): Promise<string> {
 		const cached = this.groupNameCache.get(parentId);
 		if (cached) {
 			return cached;
@@ -270,4 +319,10 @@ export class Resolver {
 		this.stateCache.set(cacheKey, state.id);
 		return state.id;
 	}
+}
+
+function formatLabelMatches(labels: Array<{ name: string; teamId?: string }>): string {
+	return labels
+		.map((label) => `"${label.name}" (${label.teamId ? `team ${label.teamId}` : "workspace"})`)
+		.join(", ");
 }
