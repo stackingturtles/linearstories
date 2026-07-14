@@ -40,7 +40,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.2",
     "@types/bun": "latest",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   },
   "dependencies": {
     "@linear/sdk": "^75.0.0",
