@@ -6,7 +6,7 @@ Canonical repository: https://github.com/stackingturtles/linearstories
 Human documentation: https://github.com/stackingturtles/linearstories/blob/main/README.md
 Markdown format: https://github.com/stackingturtles/linearstories/blob/main/docs/USER_STORY_FORMAT.md
 Releases: https://github.com/stackingturtles/linearstories/releases
-Current documented version: 1.2.0
+Current documented version: 1.3.0
 
 ## Core model
 
