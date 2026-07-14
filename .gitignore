@@ -43,3 +43,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Vercel
 .vercel
+
+# Review artifacts
+docs/reviews/
