@@ -1,0 +1,278 @@
+# linearstories
+
+> Agent-oriented reference for the linearstories CLI. linearstories synchronizes Markdown epics and user stories with Linear while preserving a two-level issue hierarchy.
+
+Canonical repository: https://github.com/stackingturtles/linearstories
+Human documentation: https://github.com/stackingturtles/linearstories/blob/main/README.md
+Markdown format: https://github.com/stackingturtles/linearstories/blob/main/docs/USER_STORY_FORMAT.md
+Releases: https://github.com/stackingturtles/linearstories/releases
+Current documented version: 1.2.0
+
+## Core model
+
+linearstories supports exactly two hierarchy levels:
+
+1. Epic: a top-level Linear issue whose per-issue `labels` contains the exact, case-sensitive label `Epic`.
+2. User story: an issue without the `Epic` label. It may be standalone or linked to an epic through `epic` metadata.
+
+Epic requirements:
+
+- Include the exact `Epic` label in per-issue metadata.
+- Include a substantive `### Why is this needed?` section.
+- Do not include `### Acceptance Criteria`.
+- Do not include `epic` metadata. Nested epics are invalid.
+
+User story requirements:
+
+- Do not include the `Epic` label.
+- Include `### Acceptance Criteria` with at least one `- [ ]` checkbox.
+- Set `epic` to an existing Linear identifier or an exact local epic title when the story has a parent.
+
+## Installation
+
+Prefer the installed executable for regular use:
+
+```bash
+bun install -g linearstories
+linearstories --version
+```
+
+Use `bunx linearstories ...` only for a one-off trial. Release binaries can also be placed on `PATH`.
+
+## Configuration
+
+Configuration discovery order:
+
+1. `--config <path>`
+2. `.linearrc.json` in the current directory
+3. `~/.config/linearstories/config.json`
+
+Minimal `.linearrc.json`:
+
+```json
+{
+  "apiKey": "lin_api_xxxxxxxxxxxxxxxxxxxx",
+  "defaultTeam": "Engineering",
+  "defaultProject": "Q1 Release",
+  "defaultLabels": ["User Story"]
+}
+```
+
+`LINEAR_API_KEY` overrides the configured `apiKey`. An API key is required by configuration loading for all commands, including local `--dry-run`.
+
+Do not put `Epic` in `defaultLabels`. It is an issue-type discriminator and must appear only on individual epics.
+
+Named contexts are supported:
+
+```json
+{
+  "contexts": [
+    {
+      "name": "orgA",
+      "apiKey": "lin_api_org_a",
+      "defaultTeam": "Engineering",
+      "defaultProject": "Q1 Release",
+      "defaultLabels": []
+    }
+  ]
+}
+```
+
+Select one with `--context orgA`.
+
+## Target precedence
+
+Effective team and project values use this precedence:
+
+1. CLI `--team` or `--project`
+2. File YAML frontmatter `team` or `project`
+3. Config `defaultTeam` or `defaultProject`
+
+The CLI flags are true overrides. Team and project are file-level fields, not per-issue metadata fields.
+
+The target team and project must already exist in Linear. linearstories does not create teams or projects.
+
+## Markdown format
+
+One file may contain multiple issues. Each issue begins with an H2 heading. Optional file frontmatter sets team and project. A fenced YAML block immediately after each H2 contains issue metadata.
+
+````markdown
+---
+project: "Q1 Release"
+team: "Engineering"
+---
+
+## Account access
+
+```yaml
+linear_id:
+linear_url:
+labels: [Epic, Auth]
+priority: 2
+status: Backlog
+```
+
+Provide secure account access and recovery.
+
+### Why is this needed?
+
+Users need secure access to protected features.
+
+## As a user, I want to log in so that I can access my account
+
+```yaml
+linear_id:
+linear_url:
+epic: Account access
+labels: [Feature, Auth]
+priority: 2
+estimate: 3
+assignee: jane@example.com
+status: Backlog
+```
+
+Allow registered users to authenticate.
+
+### Acceptance Criteria
+
+- [ ] Valid credentials create an authenticated session
+- [ ] Invalid credentials return a clear error
+````
+
+Supported issue metadata:
+
+- `linear_id`: existing Linear identifier, for example `ENG-42`. Empty means create.
+- `linear_url`: Linear URL. Written after creation.
+- `epic`: parent Linear identifier or exact title of a local epic in the same import invocation.
+- `priority`: `0` None, `1` Urgent, `2` High, `3` Normal, `4` Low.
+- `labels`: exact Linear label names.
+- `estimate`: story points.
+- `assignee`: workspace member email or display name.
+- `status`: workflow state name for the effective team.
+
+`linear_id` present means update. Empty or absent means create. Successful creates write `linear_id` and `linear_url` back to the source Markdown unless `--no-write-back` is used.
+
+## Safe import workflow
+
+Recommended agent sequence:
+
+```bash
+# 1. Validate Markdown and local hierarchy without Linear API calls
+linearstories import --dry-run stories/*.md
+
+# 2. Validate all remote prerequisites without creating labels or issues
+linearstories import --preflight stories/*.md
+
+# 3. Import after preflight passes
+linearstories import stories/*.md
+```
+
+A normal import always repeats remote preflight before issue mutation, so step 2 is optional but useful for explicit review.
+
+Remote preflight validates the complete input set before any issue is created or updated:
+
+- Teams
+- Projects accessible to each team
+- Team-scoped and workspace-scoped labels
+- Label casing and label-group exclusivity
+- Assignees
+- Team workflow states
+- Existing parent epic references
+- API access needed for these reads
+
+If local validation, remote preflight, or authorized label provisioning fails, no issue mutation begins. After preflight passes and issue mutation starts, an API failure can leave earlier issue mutations in place. Fix the failure and rerun; populated `linear_id` values make successful prior creations update instead of duplicate.
+
+Epics are mutated before user stories. Local parent title references are resolved across every file passed to the same command. Source result order is preserved.
+
+## Label rules
+
+Labels are deduplicated and checked once per effective team. Resolution order:
+
+1. Exact label scoped to the target team
+2. Exact workspace-scoped label
+
+Never select a same-named label owned exclusively by another team.
+
+Default behavior is strict:
+
+- Missing ordinary labels fail preflight.
+- Missing exact `Epic` fails preflight.
+- Case-only applicable labels fail preflight.
+- Multiple requested child labels from the same Linear label group fail preflight.
+- Labels are never created implicitly.
+
+To create unresolved labels explicitly:
+
+```bash
+linearstories import --create-missing-labels stories/*.md
+```
+
+This creates team-scoped labels, including `Epic`, only after all other remote prerequisites pass. Creation is idempotent on rerun. A creation failure prevents issue mutation. Applicable case-only collisions are not auto-created because they are ambiguous.
+
+To explicitly continue without unavailable labels:
+
+```bash
+linearstories import --allow-missing-labels stories/*.md
+```
+
+Skipped ordinary labels appear in the preflight report. The reserved `Epic` label is never skippable because it defines the issue type. For an update containing skipped labels, linearstories omits label synchronization so existing Linear labels are not cleared. Case-only collisions applicable to the target team/workspace and label-group conflicts remain hard failures.
+
+## Import flags
+
+```text
+linearstories import [options] <files...>
+
+-c, --config <path>       Config file path
+--context <name>          Named config context
+-t, --team <name>         Override file/config team
+-p, --project <name>      Override file/config project
+--dry-run                 Local validation only; no Linear API calls
+--preflight               Read-only remote validation; no labels or issues created
+--create-missing-labels   Provision unresolved team labels, then import
+--allow-missing-labels    Explicitly skip unavailable labels
+--no-write-back           Do not write created IDs and URLs into Markdown
+```
+
+Invalid combinations:
+
+- `--dry-run` with `--preflight`
+- `--dry-run` with either remote label option
+- `--preflight` with `--create-missing-labels`
+- `--create-missing-labels` with `--allow-missing-labels`
+
+The command exits nonzero when validation or import results contain failures.
+
+## Export
+
+Export Linear issues into re-importable Markdown:
+
+```bash
+linearstories export -t "Engineering" -p "Q1 Release" -o stories/exported.md
+```
+
+Useful export filters:
+
+```text
+-t, --team <name>
+-p, --project <name>
+-i, --issues <ids>
+-s, --status <state>
+-a, --assignee <email>
+--creator <email>
+-o, --output <file>
+```
+
+Exported epics retain the exact `Epic` label. Exported child issues use the stable parent identifier as `epic` metadata.
+
+## Agent operating rules
+
+1. Read the complete input set before modifying stories.
+2. Preserve existing `linear_id` and `linear_url` unless intentionally creating a new issue.
+3. Never add `Epic` to `defaultLabels` or to a user story.
+4. Never add acceptance criteria to an epic.
+5. Never remove acceptance criteria from a user story.
+6. Use exact local epic titles or stable Linear identifiers in `epic`.
+7. Run `--dry-run`, then `--preflight`, before a large import.
+8. Do not use `--allow-missing-labels` unless metadata loss is explicitly accepted.
+9. Use `--create-missing-labels` only with authorization to change the target team's taxonomy.
+10. Inspect the consolidated preflight report before retrying failures.

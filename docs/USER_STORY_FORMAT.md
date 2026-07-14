@@ -76,6 +76,8 @@ Optional YAML frontmatter sets defaults for every issue in the file.
 | `project` | string | Default Linear project name |
 | `team` | string | Default Linear team name |
 
+The target team and project must already exist in Linear. CLI `--team` and `--project` values override file frontmatter; file frontmatter overrides `defaultTeam` and `defaultProject` from config.
+
 ## Issue heading
 
 Each issue starts with an H2 heading (`## `). The heading text becomes the Linear issue title.
@@ -97,7 +99,7 @@ Place a fenced YAML block immediately after the H2 heading. All general metadata
 | `assignee` | string | Email address or display name. |
 | `status` | string | Workflow state such as `Backlog`, `Todo`, `In Progress`, or `Done`. |
 
-Per-issue labels are merged with `defaultLabels`. Because `Epic` changes the issue type, it cannot be a default label.
+Per-issue labels are merged with `defaultLabels`. Because `Epic` changes the issue type, it cannot be a default label. Label names are case-sensitive for exact matching.
 
 ## Epic format
 
@@ -200,8 +202,49 @@ The importer parses all input files before making changes. It processes epics fi
 | User story lacks an acceptance-criteria checklist | Fails that user story |
 | Epic references another epic | Fails that epic |
 | Parent reference is missing, ambiguous, nested, or not Epic-labelled | Fails the child story |
+| Team, project, assignee, status, or existing parent is unresolved | Fails remote preflight before issue mutation |
+| Label is missing, belongs only to another team, or has a case/group conflict | Fails remote preflight by default |
 
-After successful creation, `linear_id` and `linear_url` are written back to the source file. A dry run performs local structure and hierarchy checks without calling Linear, so remote parent existence and labels are verified only during a real import.
+Before creating or updating any issue, a normal import resolves all remote prerequisites for the complete input set. If preflight or authorized label creation fails, no issue mutations begin. Epics are mutated before user stories only after the full plan passes.
+
+After successful creation, `linear_id` and `linear_url` are written back to the source file.
+
+### Validation modes
+
+```bash
+# Local parsing and hierarchy validation; makes no Linear API calls
+linearstories import --dry-run stories/*.md
+
+# Read-only remote validation; creates no labels or issues
+linearstories import --preflight stories/*.md
+```
+
+`--dry-run` cannot detect missing teams, projects, labels, workflow states, assignees, permissions, or remote epic problems. Use `--preflight` for those checks. A normal import performs the same remote preflight automatically.
+
+### Label resolution and provisioning
+
+Labels are collected and resolved once per effective team. Resolution uses this order:
+
+1. Exact label scoped to the target team
+2. Exact workspace label available to all teams
+
+Labels owned exclusively by another team are never applied. Case-only matches and multiple labels from the same label group are reported explicitly rather than silently skipped.
+
+Missing labels are fatal by default and are never created implicitly. Choose one explicit mode when needed:
+
+```bash
+# Create unresolved labels for their target teams, then import
+linearstories import --create-missing-labels stories/*.md
+
+# Continue without unavailable labels
+linearstories import --allow-missing-labels stories/*.md
+```
+
+`--create-missing-labels` provisions the exact `Epic` label through the same mechanism as ordinary labels and is idempotent on reruns. Label creation starts only after other preflight checks pass; a creation failure prevents all issue mutations.
+
+`--allow-missing-labels` records unavailable ordinary labels as skipped. The reserved `Epic` label cannot be skipped because it defines the issue type. For updates containing skipped labels, the importer omits label synchronization so it cannot clear labels already present in Linear. Applicable case-only and label-group conflicts remain hard failures because silently choosing a label would be ambiguous.
+
+`--dry-run` cannot be combined with remote validation or label options. `--preflight` cannot be combined with `--create-missing-labels`, and `--create-missing-labels` cannot be combined with `--allow-missing-labels`.
 
 ## Export behavior
 
