@@ -1,6 +1,11 @@
 import type { LinearClient } from "@linear/sdk";
 import { EPIC_LABEL, isEpic, validateIssueType } from "../hierarchy.ts";
-import { type CreateIssueInput, createIssue, updateIssue } from "../linear/issues.ts";
+import {
+	type CreateIssueInput,
+	createIssue,
+	type UpdateIssueInput,
+	updateIssue,
+} from "../linear/issues.ts";
 import { Resolver } from "../linear/resolvers.ts";
 import { parseMarkdownFile } from "../markdown/parser.ts";
 import { writeBackIds } from "../markdown/writer.ts";
@@ -363,8 +368,10 @@ async function updateStory(
 	// Linear accepts a human-readable issue identifier for updates.
 	const issueIdentifier = story.linearId as string;
 
-	const updateInput: Record<string, unknown> = {
+	const updateInput: UpdateIssueInput = {
 		title: story.title,
+		labelIds: labelIds ?? [],
+		parentId: parentId ?? null,
 	};
 
 	if (story.body) {
@@ -372,9 +379,6 @@ async function updateStory(
 	}
 	if (projectId) {
 		updateInput.projectId = projectId;
-	}
-	if (labelIds && labelIds.length > 0) {
-		updateInput.labelIds = labelIds;
 	}
 	if (assigneeId) {
 		updateInput.assigneeId = assigneeId;
@@ -388,10 +392,6 @@ async function updateStory(
 	if (stateId) {
 		updateInput.stateId = stateId;
 	}
-	if (parentId) {
-		updateInput.parentId = parentId;
-	}
-
 	await updateIssue(client, issueIdentifier, updateInput);
 
 	return {

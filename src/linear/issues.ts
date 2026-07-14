@@ -15,6 +15,10 @@ export interface CreateIssueInput {
 	parentId?: string;
 }
 
+export type UpdateIssueInput = Partial<Omit<CreateIssueInput, "teamId" | "parentId">> & {
+	parentId?: string | null;
+};
+
 export interface CreateIssueResult {
 	id: string;
 	identifier: string;
@@ -114,7 +118,7 @@ export async function createIssue(
 export async function updateIssue(
 	client: LinearClient,
 	issueId: string,
-	input: Partial<Omit<CreateIssueInput, "teamId">>,
+	input: UpdateIssueInput,
 ): Promise<UpdateIssueResult> {
 	try {
 		const typedClient = client as unknown as LinearClientWithMethods;

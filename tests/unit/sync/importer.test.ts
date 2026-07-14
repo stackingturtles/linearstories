@@ -488,6 +488,39 @@ describe("importStories", () => {
 		expect(updateIssueFn.mock.calls[0]?.[1]).toMatchObject({ parentId: "ENG-10" });
 	});
 
+	test("clears the Linear parent when an updated story omits epic metadata", async () => {
+		const filePath = writeTmpFile("standalone-update.md", markdownExistingStories);
+		const updateIssueFn = mock(async () => ({
+			success: true,
+			issue: Promise.resolve({ identifier: "ENG-42" }),
+		}));
+		const client = createMockClient({ updateIssue: updateIssueFn });
+
+		await importStories(client, {
+			files: [filePath],
+			config: defaultConfig,
+		});
+
+		expect(updateIssueFn.mock.calls[0]?.[1]).toMatchObject({ parentId: null });
+	});
+
+	test("clears labels when converting an existing epic to an unlabeled user story", async () => {
+		const markdown = markdownExistingStories.replace("labels: [Feature]\n", "");
+		const filePath = writeTmpFile("epic-to-story.md", markdown);
+		const updateIssueFn = mock(async () => ({
+			success: true,
+			issue: Promise.resolve({ identifier: "ENG-42" }),
+		}));
+		const client = createMockClient({ updateIssue: updateIssueFn });
+
+		await importStories(client, {
+			files: [filePath],
+			config: defaultConfig,
+		});
+
+		expect(updateIssueFn.mock.calls[0]?.[1]).toMatchObject({ labelIds: [] });
+	});
+
 	test("dry run validates local hierarchy without calling Linear", async () => {
 		const childPath = writeTmpFile("child.md", childMarkdown);
 		const epicPath = writeTmpFile("epic.md", epicMarkdown);
