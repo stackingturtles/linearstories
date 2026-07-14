@@ -93,8 +93,8 @@
 
     <div class="hero-install">
       <span class="hero-install-label">$</span>
-      <code>bunx linearstories import stories/*.md</code>
-      <button class="copy-btn" onclick="navigator.clipboard.writeText('bunx linearstories import stories/*.md')" title="Copy to clipboard">
+      <code>linearstories import stories/*.md</code>
+      <button class="copy-btn" onclick="navigator.clipboard.writeText('linearstories import stories/*.md')" title="Copy to clipboard">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
           <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -605,8 +605,8 @@ Users need secure access to protected features.
       <span class="section-label">Quick start</span>
       <h2 class="section-heading">Three commands to your first import</h2>
       <p class="section-sub">
-        Get from zero to a fully populated Linear board in under five minutes.
-        No configuration file needed for a basic setup — just your API key.
+        Install once, point the CLI at your Markdown issues, and keep your Linear board in sync.
+        No configuration file is needed for a basic setup — just your API key.
       </p>
 
       <div class="quickstart-tips">
@@ -615,13 +615,13 @@ Users need secure access to protected features.
           Generate a personal API key at
           <code>linear.app/settings/api</code>.
           Set it as <code>LINEAR_API_KEY</code> in your environment or
-          pass it with the <code>--token</code> flag.
+          add it as <code>apiKey</code> in <code>.linearrc.json</code>.
         </div>
         <div class="tip">
-          <strong>Binary users</strong>
-          Download the binary for your platform from
-          <code>github.com/stackingturtles/linearstories/releases</code>
-          and place it on your PATH. The commands are identical.
+          <strong>Run it directly</strong>
+          Install globally or place a release binary on your PATH, then use
+          <code>linearstories</code> for regular work. Use <code>bunx</code>
+          only for a one-off trial without installing.
         </div>
         <div class="tip">
           <strong>Dry run first</strong>
@@ -640,10 +640,10 @@ Users need secure access to protected features.
       </div>
       <div class="terminal-body">
         <span class="t-line">
-          <span class="t-comment"># 1. Install globally (or use bunx/npx without installing)</span>
+          <span class="t-comment"># 1. Install globally for regular use</span>
         </span>
         <span class="t-line">
-          <span class="t-prompt">$ </span><span class="t-cmd">npm install -g linearstories</span>
+          <span class="t-prompt">$ </span><span class="t-cmd">bun install -g linearstories</span>
         </span>
         <span class="t-line t-out">+ linearstories@1.2.0</span>
         <br />
@@ -657,21 +657,12 @@ Users need secure access to protected features.
         <br />
 
         <span class="t-line">
-          <span class="t-comment"># 3. Create a stories file (or use your own)</span>
+          <span class="t-comment"># 3. Import your Markdown issues into Linear</span>
         </span>
         <span class="t-line">
-          <span class="t-prompt">$ </span><span class="t-cmd">linearstories init stories.md</span>
+          <span class="t-prompt">$ </span><span class="t-cmd">linearstories import stories/*.md</span>
         </span>
-        <span class="t-line t-out">Created stories.md with example template</span>
-        <br />
-
-        <span class="t-line">
-          <span class="t-comment"># 4. Import into Linear</span>
-        </span>
-        <span class="t-line">
-          <span class="t-prompt">$ </span><span class="t-cmd">linearstories import stories.md</span>
-        </span>
-        <span class="t-line t-out">Parsing stories.md...</span>
+        <span class="t-line t-out">Parsing stories/*.md...</span>
         <span class="t-line t-out">Found 1 epic and 2 user stories</span>
         <span class="t-line t-out">Importing to project "Q1 2026 Release"...</span>
         <span class="t-line t-success">Done. 3 issues created, 2 sub-issues linked.</span>
