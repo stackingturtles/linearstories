@@ -232,8 +232,8 @@ Users need secure access to protected features.
       <span class="section-label">How it works</span>
       <h2 class="section-heading">Three steps from goal to shipped</h2>
       <p class="section-sub">
-        Define the goal, decompose it into stories, and give agents a precise
-        target to build toward.
+        Define the goal, sharpen every story with an agentic review, and give
+        coding agents a precise target to build toward.
       </p>
     </div>
 
@@ -262,16 +262,17 @@ Users need secure access to protected features.
         <div class="step-number">2</div>
         <div class="step-icon">
           <svg viewBox="0 0 24 24" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="16 16 12 12 8 16"></polyline>
-            <line x1="12" y1="12" x2="12" y2="21"></line>
-            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+            <path d="M14 3h7v7"></path>
+            <path d="m21 3-9 9"></path>
+            <path d="M12 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"></path>
+            <path d="m7 15 2 2 4-4"></path>
           </svg>
         </div>
-        <h3>Import to Linear</h3>
+        <h3>Review and improve</h3>
         <p>
-          Run <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">linearstories import</code>.
-          A complete remote preflight checks teams, projects, labels, and people
-          before epics and their native sub-issues are changed.
+          Run <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">/rate-userstories</code>.
+          The agent grades every epic and story, hard-fails contradictions across
+          the hierarchy, and proposes replacement Markdown for you to review.
         </p>
       </div>
 
@@ -306,44 +307,70 @@ Users need secure access to protected features.
 
     <div class="reveal" style="margin-bottom: var(--space-12)">
       <span class="section-label">Features</span>
-      <h2 class="section-heading">Everything your workflow needs</h2>
+      <h2 class="section-heading">An opinionated system for better stories</h2>
       <p class="section-sub">
-        From solo engineers to multi-team orgs, linearstories covers the full
-        lifecycle from high-level goal to implementable user story.
+        Keep intent, implementation, and proof distinct. Then review the work,
+        explore the plan, and sync it with the tools your team already uses.
       </p>
     </div>
 
     <div class="features-inner reveal">
 
+      <div class="feature-card feature-card--foundation">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="5" cy="6" r="2"></circle>
+            <circle cx="12" cy="12" r="2"></circle>
+            <circle cx="19" cy="18" r="2"></circle>
+            <path d="m6.5 7.5 4 3M13.5 13.5l4 3"></path>
+          </svg>
+        </div>
+        <h3>Epic → user story → acceptance criteria</h3>
+        <p>
+          One opinionated structure keeps every layer honest: epics state the
+          goal and why it matters, user stories define an implementable slice,
+          and acceptance criteria make “done” observable and testable.
+        </p>
+        <div class="feature-flow" aria-label="Epic to user story to acceptance criteria hierarchy">
+          <span>Goal</span>
+          <i aria-hidden="true">→</i>
+          <span>Work</span>
+          <i aria-hidden="true">→</i>
+          <span>Proof</span>
+        </div>
+      </div>
+
       <div class="feature-card">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <polyline points="16 16 12 12 8 16"></polyline>
-            <line x1="12" y1="12" x2="12" y2="21"></line>
-            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+            <path d="M7 7h11l-3-3"></path>
+            <path d="m18 7-3 3"></path>
+            <path d="M17 17H6l3 3"></path>
+            <path d="m6 17 3-3"></path>
           </svg>
         </div>
-        <h3>Import to Linear</h3>
+        <h3>Linear sync</h3>
         <p>
-          Push Markdown epics and user stories into Linear as parent issues and
-          sub-issues. Team-aware label resolution and atomic preflight prevent
-          incomplete issue sets and cross-team label mistakes.
+          Import Markdown into Linear or export existing issues back to files.
+          Team-aware preflight validates projects, labels, people, and hierarchy
+          before changes are written.
         </p>
       </div>
 
       <div class="feature-card">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <polyline points="8 8 12 4 16 8"></polyline>
-            <line x1="12" y1="4" x2="12" y2="13"></line>
-            <line x1="3" y1="20" x2="21" y2="20"></line>
+            <path d="M14 3h7v7"></path>
+            <path d="m21 3-9 9"></path>
+            <path d="M12 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"></path>
+            <path d="m7 15 2 2 4-4"></path>
           </svg>
         </div>
-        <h3>Export from Linear</h3>
+        <h3>Rate, review, improve</h3>
         <p>
-          Pull any project or team's issues back into Markdown. Ideal for
-          documentation, audits, and sharing context with stakeholders who
-          do not live in Linear.
+          Run <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">/rate-userstories</code>
+          to grade issue quality, hard-fail contradictions across stories, and
+          receive improved replacement Markdown for human review.
         </p>
       </div>
 
@@ -356,11 +383,11 @@ Users need secure access to protected features.
             <path d="M10.8 7.2 6.2 15.8M13.2 7.2l4.6 8.6M7.5 18h9"></path>
           </svg>
         </div>
-        <h3>Local project atlas</h3>
+        <h3>Local Project Atlas</h3>
         <p>
           Run <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">linearstories visualize</code>
-          to explore projects, epics, stories, status, and acceptance-criteria
-          completion in an interactive browser graph.
+          to explore hierarchy, filter stories by category label, and inspect
+          status and acceptance-criteria completion in an interactive browser graph.
         </p>
       </div>
 
@@ -378,37 +405,6 @@ Users need secure access to protected features.
           Define named contexts for each Linear organization in a single config
           file. Switch between them with <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">--context orgA</code> — each
           context carries its own API key, default team, and project.
-        </p>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-            <line x1="8" y1="21" x2="16" y2="21"></line>
-            <line x1="12" y1="17" x2="12" y2="21"></line>
-          </svg>
-        </div>
-        <h3>Epic hierarchy</h3>
-        <p>
-          Create Epic-labelled parent issues and link user stories through
-          Linear's native sub-issue relationship. Local title references and
-          existing Linear identifiers are both supported.
-        </p>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <polyline points="9 11 12 14 22 4"></polyline>
-            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-          </svg>
-        </div>
-        <h3>Acceptance criteria first</h3>
-        <p>
-          Every user story enforces a structured AC checklist. Your agents
-          get a verifiable definition of done. Your reviewers get a clear audit
-          trail of what was specified.
         </p>
       </div>
 
@@ -433,7 +429,7 @@ Users need secure access to protected features.
 
       <div class="atlas-showcase-content">
         <p class="section-sub">
-          Turn any LinearStories Markdown file into a local, interactive map of
+          Turn any LinearStories Markdown file into Project Atlas: a local, interactive map of
           projects, epics, user stories, status, and acceptance-criteria progress.
           Explore the hierarchy before import, during delivery, or in review.
         </p>
@@ -456,7 +452,7 @@ Users need secure access to protected features.
           </div>
           <div class="atlas-benefit">
             <strong>Filter the map</strong>
-            <span>Show or hide stories by category label.</span>
+            <span>Show or hide stories with exact category-label filters.</span>
           </div>
           <div class="atlas-benefit">
             <strong>Inspect completion</strong>
@@ -796,6 +792,39 @@ Users need secure access to protected features.
 </section>
 
 <hr class="divider" />
+
+
+<!-- ============================
+     AGENT HANDOFF
+=============================== -->
+<section class="agent-handoff" id="agent-docs">
+  <div class="container">
+    <div class="agent-handoff-card reveal">
+      <div class="agent-handoff-copy">
+        <span class="section-label">Agent shortcut</span>
+        <h2>Too busy to read all this?</h2>
+        <p>
+          Have your agent do it for you. Point it at the agent-ready guide,
+          then ask it to install, configure, review, sync, or visualize your stories.
+        </p>
+      </div>
+
+      <div class="agent-handoff-action">
+        <span class="agent-handoff-kicker">Give this URL to your agent</span>
+        <div class="agent-handoff-url">
+          <a href="https://linearstories.com/llms.txt">https://linearstories.com/llms.txt</a>
+          <button class="copy-btn" onclick="navigator.clipboard.writeText('https://linearstories.com/llms.txt')" title="Copy agent documentation URL" aria-label="Copy agent documentation URL">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <span class="agent-handoff-note">One text file. Full CLI and format context.</span>
+      </div>
+    </div>
+  </div>
+</section>
 
 
 <!-- ============================

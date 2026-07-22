@@ -99,7 +99,7 @@
 
 			for (const story of stories) {
 				for (const label of story.labels ?? []) {
-					if (label.toLowerCase() === "epic") continue;
+					if (label === "Epic") continue;
 					counts.set(label, (counts.get(label) ?? 0) + 1);
 				}
 			}

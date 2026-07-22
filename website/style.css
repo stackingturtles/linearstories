@@ -725,6 +725,61 @@ hr.divider {
   transition: border-color 0.2s, transform 0.2s;
 }
 
+.feature-card--foundation {
+  grid-column: span 2;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(14, 165, 233, 0.12), transparent 42%),
+    var(--bg-raised);
+}
+
+.feature-card--foundation::after {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  right: -70px;
+  bottom: -110px;
+  border: 1px solid rgba(14, 165, 233, 0.12);
+  border-radius: 50%;
+  box-shadow: 0 0 0 24px rgba(14, 165, 233, 0.025), 0 0 0 48px rgba(14, 165, 233, 0.015);
+  pointer-events: none;
+}
+
+.feature-card--foundation h3 {
+  font-size: 1.125rem;
+}
+
+.feature-card--foundation p {
+  max-width: 42rem;
+}
+
+.feature-flow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: auto;
+  padding-top: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 0.675rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.feature-flow span {
+  padding: 0.35rem 0.55rem;
+  color: var(--accent-light);
+  background: rgba(14, 165, 233, 0.08);
+  border: 1px solid rgba(14, 165, 233, 0.18);
+  border-radius: var(--radius-sm);
+}
+
+.feature-flow i {
+  color: var(--text-muted);
+  font-style: normal;
+}
+
 .feature-card:hover {
   border-color: rgba(14, 165, 233, 0.15);
   transform: translateY(-3px);
@@ -1254,6 +1309,117 @@ hr.divider {
   border-radius: 3px;
 }
 
+/* ----- Agent Handoff ----- */
+
+.agent-handoff {
+  position: relative;
+  overflow: hidden;
+  padding-block: var(--space-16);
+}
+
+.agent-handoff-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(22rem, 0.9fr);
+  align-items: center;
+  gap: var(--space-12);
+  overflow: hidden;
+  padding: var(--space-10);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(14, 165, 233, 0.16), transparent 42%),
+    linear-gradient(135deg, rgba(14, 165, 233, 0.055), transparent 55%),
+    var(--bg-raised);
+  border: 1px solid rgba(14, 165, 233, 0.18);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 28px 72px rgba(0, 0, 0, 0.3);
+}
+
+.agent-handoff-card::before {
+  content: "";
+  position: absolute;
+  width: 250px;
+  height: 250px;
+  right: -130px;
+  bottom: -160px;
+  border: 1px solid rgba(14, 165, 233, 0.12);
+  border-radius: 50%;
+  box-shadow: 0 0 0 36px rgba(14, 165, 233, 0.025), 0 0 0 72px rgba(14, 165, 233, 0.015);
+  pointer-events: none;
+}
+
+.agent-handoff-copy,
+.agent-handoff-action {
+  position: relative;
+  z-index: 1;
+}
+
+.agent-handoff-copy h2 {
+  margin-top: var(--space-4);
+  color: var(--text-primary);
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.agent-handoff-copy p {
+  max-width: 39rem;
+  margin-top: var(--space-4);
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.agent-handoff-action {
+  padding: var(--space-5);
+  background: rgba(8, 11, 18, 0.72);
+  border: 1px solid var(--code-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.28);
+}
+
+.agent-handoff-kicker,
+.agent-handoff-note {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.agent-handoff-kicker {
+  margin-bottom: var(--space-3);
+  color: var(--accent-light);
+}
+
+.agent-handoff-url {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.agent-handoff-url a {
+  min-width: 0;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.agent-handoff-url a:hover {
+  color: var(--accent-light);
+}
+
+.agent-handoff-url .copy-btn {
+  margin-left: auto;
+}
+
+.agent-handoff-note {
+  margin-top: var(--space-3);
+  color: var(--text-muted);
+  font-size: 0.6rem;
+}
+
 /* ----- Footer ----- */
 
 .footer {
@@ -1414,7 +1580,8 @@ body::after {
   .solution-inner,
   .quickstart-inner,
   .showcase-inner,
-  .atlas-showcase-header {
+  .atlas-showcase-header,
+  .agent-handoff-card {
     grid-template-columns: 1fr;
     gap: var(--space-10);
   }
@@ -1492,6 +1659,18 @@ body::after {
 
   .features-inner {
     grid-template-columns: 1fr;
+  }
+
+  .feature-card--foundation {
+    grid-column: auto;
+  }
+
+  .agent-handoff-card {
+    padding: var(--space-6);
+  }
+
+  .agent-handoff-action {
+    padding: var(--space-4);
   }
 
   .atlas-benefits {

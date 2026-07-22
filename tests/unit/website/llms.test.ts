@@ -11,6 +11,8 @@ test("llms.txt documents the agent-safe CLI workflow", () => {
 	expect(content).toContain("CLI `--team` or `--project`");
 	expect(content).toContain("exact, case-sensitive label `Epic`");
 	expect(content).toContain("linearstories visualize stories/project.md");
+	expect(content).toContain("Project Atlas visualization");
+	expect(content).toContain("lowercase `epic` remains a user-story category");
 	expect(content).toContain("does not load configuration or require an API key");
 	expect(content).toContain("--no-open");
 });

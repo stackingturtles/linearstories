@@ -152,9 +152,9 @@ Supported issue metadata:
 
 `linear_id` present means update. Empty or absent means create. Successful creates write `linear_id` and `linear_url` back to the source Markdown unless `--no-write-back` is used.
 
-## Visualization
+## Project Atlas visualization
 
-Render one Markdown file as a local interactive project, epic, story, and acceptance-criteria graph:
+Render one Markdown file in Project Atlas, a local interactive project, epic, story, and acceptance-criteria graph:
 
 ```bash
 linearstories visualize stories/project.md
@@ -166,6 +166,11 @@ Behavior:
 - Displays epic-linked stories beneath their epic and standalone stories beneath the project.
 - Displays an unresolved Linear-style parent identifier, such as `ENG-42`, as a read-only placeholder epic because visualization does not query Linear.
 - Generates deterministic local display IDs for issues without `linear_id`.
+- Provides `Collapse`, `Expand all`, and `Fit view` graph controls.
+- Creates category-filter buttons from every user-story label except exact `Epic`; lowercase `epic` remains a user-story category because issue typing is case-sensitive.
+- Hides matching stories when a category is disabled without changing the complete-file totals shown in the header.
+- Shows title, progress, acceptance criteria, labels, and `linear_url` in the selected issue's details panel.
+- Maps `Done` and `Completed` to completed, `In Progress` and `In-Progress` to in progress, and uses checked acceptance criteria as an in-progress fallback. Other workflow states display as not started.
 - Fails before server startup when a local epic reference is missing or ambiguous.
 - Binds only to `127.0.0.1`; default port is `4173`.
 - Opens the default browser unless `--no-open` is passed.
@@ -305,4 +310,4 @@ Exported epics retain the exact `Epic` label. Exported child issues use the stab
 8. Do not use `--allow-missing-labels` unless metadata loss is explicitly accepted.
 9. Use `--create-missing-labels` only with authorization to change the target team's taxonomy.
 10. Inspect the consolidated preflight report before retrying failures.
-11. Use `linearstories visualize <file>` when hierarchy or completion needs human visual review; it is read-only and does not need Linear credentials.
+11. Use Project Atlas through `linearstories visualize <file>` when hierarchy, category distribution, or completion needs human visual review; it is read-only and does not need Linear credentials.
