@@ -769,7 +769,7 @@ hr.divider {
 
 .feature-flow span {
   padding: 0.35rem 0.55rem;
-  color: var(--accent-light);
+  color: var(--accent-mid);
   background: rgba(14, 165, 233, 0.08);
   border: 1px solid rgba(14, 165, 233, 0.18);
   border-radius: var(--radius-sm);
@@ -1326,11 +1326,11 @@ hr.divider {
   overflow: hidden;
   padding: var(--space-10);
   background:
-    radial-gradient(circle at 100% 0%, rgba(14, 165, 233, 0.16), transparent 42%),
+    radial-gradient(circle at 100% 0%, rgba(14, 165, 233, 0.1), transparent 42%),
     linear-gradient(135deg, rgba(14, 165, 233, 0.055), transparent 55%),
     var(--bg-raised);
   border: 1px solid rgba(14, 165, 233, 0.18);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   box-shadow: 0 28px 72px rgba(0, 0, 0, 0.3);
 }
 
@@ -1354,9 +1354,8 @@ hr.divider {
 }
 
 .agent-handoff-copy h2 {
-  margin-top: var(--space-4);
   color: var(--text-primary);
-  font-size: clamp(2rem, 4vw, 3.25rem);
+  font-size: clamp(2rem, 4vw, 2.75rem);
   line-height: 1.05;
   letter-spacing: -0.04em;
 }
@@ -1388,7 +1387,7 @@ hr.divider {
 
 .agent-handoff-kicker {
   margin-bottom: var(--space-3);
-  color: var(--accent-light);
+  color: var(--accent-mid);
 }
 
 .agent-handoff-url {
@@ -1407,7 +1406,7 @@ hr.divider {
 }
 
 .agent-handoff-url a:hover {
-  color: var(--accent-light);
+  color: var(--accent-mid);
 }
 
 .agent-handoff-url .copy-btn {
