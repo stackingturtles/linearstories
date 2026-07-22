@@ -99,13 +99,13 @@ The CLI creates issues in Linear and writes the `linear_id` and `linear_url` bac
 
 ### 5. Visualize the hierarchy
 
-Launch the built-in project atlas for a single LinearStories markdown file:
+Launch the built-in Project Atlas for a single LinearStories markdown file:
 
 ```bash
 linearstories visualize stories/login.md
 ```
 
-The command parses the file locally, starts a server at `http://127.0.0.1:4173`, and opens the atlas in your default browser. It displays project-to-epic-to-story links, standalone stories, status, and acceptance-criteria completion without loading configuration or calling the Linear API. Existing Linear epic identifiers not defined in the file appear as read-only placeholder epics.
+The command parses the file locally, starts a server at `http://127.0.0.1:4173`, and opens Project Atlas in your default browser. It displays project-to-epic-to-story links, standalone stories, status, and acceptance-criteria completion without loading configuration or calling the Linear API. Expand the hierarchy, inspect issue details, and filter visible user stories with buttons generated from their category labels. Existing Linear epic identifiers not defined in the file appear as read-only placeholder epics.
 
 ## Linear issue markdown template
 
@@ -434,7 +434,7 @@ linearstories import -c ./team-config.json stories/*.md
 
 ### `linearstories visualize`
 
-Render one LinearStories markdown file as an interactive local hierarchy. Epics can be expanded to show their user stories; standalone stories appear directly under the project. Acceptance criteria orbit each story as individual completion marks.
+Render one LinearStories markdown file in Project Atlas, an interactive local delivery graph. Epics can be expanded to show their user stories; standalone stories appear directly under the project. Acceptance criteria orbit each story as individual completion marks.
 
 ```
 linearstories visualize <file> [options]
@@ -452,6 +452,14 @@ linearstories visualize <file> [options]
 |------|-------------|---------|
 | `-p, --port <port>` | Local HTTP server port | `4173` |
 | `--no-open` | Start the server without opening a browser | |
+
+Project Atlas provides:
+
+- Expandable project, epic, and user-story nodes, plus `Collapse`, `Expand all`, and `Fit view` controls.
+- Category-label buttons that show or hide matching user stories. Only the exact, case-sensitive `Epic` discriminator is omitted; labels such as lowercase `epic` remain available as user-story filters.
+- Completed, in-progress, and not-started status styling for issues and acceptance criteria.
+- A details panel with issue title, progress, acceptance criteria, labels, and the Linear link when `linear_url` is present.
+- Unfiltered project totals in the header while category filters change only the visible graph.
 
 The server binds to `127.0.0.1`, exposes only embedded visualization assets and the parsed graph, and stops when you press `Ctrl+C`. The command does not read `.linearrc.json`, require `LINEAR_API_KEY`, write to the markdown file, or contact Linear. The browser loads D3 and web fonts from their public CDNs.
 

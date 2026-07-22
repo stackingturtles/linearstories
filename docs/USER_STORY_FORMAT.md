@@ -246,7 +246,7 @@ linearstories import --allow-missing-labels stories/*.md
 
 `--dry-run` cannot be combined with remote validation or label options. `--preflight` cannot be combined with `--create-missing-labels`, and `--create-missing-labels` cannot be combined with `--allow-missing-labels`.
 
-## Visualization behavior
+## Project Atlas visualization behavior
 
 Visualize one formatted markdown file without configuration or Linear API access:
 
@@ -254,7 +254,7 @@ Visualize one formatted markdown file without configuration or Linear API access
 linearstories visualize stories/project.md
 ```
 
-The local atlas uses the same parser and issue-type rules as import:
+Project Atlas uses the same parser and exact, case-sensitive issue-type rules as import:
 
 | Markdown content | Visualization |
 |------------------|---------------|
@@ -262,9 +262,16 @@ The local atlas uses the same parser and issue-type rules as import:
 | User story with a valid local `epic` title or identifier | Child of that epic |
 | User story with an existing Linear epic identifier not present in the file | Child of a read-only placeholder epic |
 | User story without `epic` | Direct child of the project |
+| User-story category label other than exact `Epic` | Clickable filter that shows or hides matching stories |
 | Checked acceptance criterion | Completed radial mark around its story |
 | Missing `linear_id` | Deterministic local display identifier |
 | Unknown or ambiguous local epic reference | Command fails before starting the server |
+
+Only the exact `Epic` label is excluded from user-story filters. A differently cased label such as `epic` does not classify an issue as an epic and remains available as a category filter.
+
+Use `Collapse`, `Expand all`, and `Fit view` to navigate the graph. Selecting a node opens its details panel; user stories include acceptance criteria and labels, and imported issues include an `Open in Linear` link when `linear_url` is present. Header totals always describe the complete file, while label filters change only the visible stories.
+
+Issue styling uses three display states: `Done` and `Completed` are completed, `In Progress` and `In-Progress` are in progress, and a story with checked criteria is in progress when its workflow state does not already map to one of those values. Other states display as not started. Project and epic states also derive from the completion state of their parsed descendants.
 
 By default, the command binds to `127.0.0.1:4173` and opens the default browser. Use `--port <port>` to change the port or `--no-open` to suppress browser launch. It does not modify the source markdown. The browser loads D3 and web fonts from public CDNs; issue data remains served by the local process.
 
