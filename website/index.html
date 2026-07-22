@@ -8,15 +8,15 @@
 
   <!-- Open Graph -->
   <meta property="og:type"        content="website" />
-  <meta property="og:title"       content="linearstories — Epics and User Stories for Linear" />
-  <meta property="og:description" content="Keep high-level goals in epics, implementation details in user stories, and native parent-child links in Linear." />
+  <meta property="og:title"       content="linearstories — Epics, User Stories, and Project Atlas for Linear" />
+  <meta property="og:description" content="Keep high-level goals in epics, implementation details in user stories, and explore the hierarchy in a local interactive project atlas." />
   <meta property="og:url"         content="https://linear-stories.vercel.app/" />
   <meta property="og:image"       content="https://linear-stories.vercel.app/og-image.png" />
 
   <!-- Twitter Card -->
   <meta name="twitter:card"        content="summary_large_image" />
   <meta name="twitter:title"       content="linearstories CLI" />
-  <meta name="twitter:description" content="Structured epics and user stories with native Linear hierarchy and testable acceptance criteria." />
+  <meta name="twitter:description" content="Structured epics and user stories with native Linear hierarchy, testable acceptance criteria, and a local interactive project atlas." />
 
   <title>linearstories — Structured epics and user stories for Linear</title>
 
@@ -47,6 +47,7 @@
       <li><a href="#problem">Problem</a></li>
       <li><a href="#how-it-works">How it works</a></li>
       <li><a href="#features">Features</a></li>
+      <li><a href="#project-atlas">Atlas</a></li>
       <li><a href="#quality-skill">Quality skill</a></li>
       <li><a href="#quick-start">Quick start</a></li>
     </ul>
@@ -349,9 +350,10 @@ Users need secure access to protected features.
       <div class="feature-card">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <polyline points="1 4 1 10 7 10"></polyline>
-            <polyline points="23 20 23 14 17 14"></polyline>
-            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+            <circle cx="12" cy="5" r="2.5"></circle>
+            <circle cx="5" cy="18" r="2.5"></circle>
+            <circle cx="19" cy="18" r="2.5"></circle>
+            <path d="M10.8 7.2 6.2 15.8M13.2 7.2l4.6 8.6M7.5 18h9"></path>
           </svg>
         </div>
         <h3>Local project atlas</h3>
@@ -411,6 +413,97 @@ Users need secure access to protected features.
       </div>
 
     </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+
+<!-- ============================
+     PROJECT ATLAS
+=============================== -->
+<section class="atlas-showcase" id="project-atlas">
+  <div class="container atlas-showcase-inner">
+
+    <div class="atlas-showcase-header reveal">
+      <div class="atlas-showcase-heading">
+        <span class="section-label">Project atlas</span>
+        <h2 class="section-heading">See the whole delivery map, not another flat issue list</h2>
+      </div>
+
+      <div class="atlas-showcase-content">
+        <p class="section-sub">
+          Turn any LinearStories Markdown file into a local, interactive map of
+          projects, epics, user stories, status, and acceptance-criteria progress.
+          Explore the hierarchy before import, during delivery, or in review.
+        </p>
+
+        <div class="atlas-command" aria-label="Project atlas command">
+          <span class="atlas-command-prompt">$</span>
+          <code>linearstories visualize stories/project.md</code>
+          <button class="copy-btn" onclick="navigator.clipboard.writeText('linearstories visualize stories/project.md')" title="Copy atlas command" aria-label="Copy atlas command">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="atlas-benefits" aria-label="Project atlas capabilities">
+          <div class="atlas-benefit">
+            <strong>Navigate hierarchy</strong>
+            <span>Expand epics into their linked stories.</span>
+          </div>
+          <div class="atlas-benefit">
+            <strong>Filter the map</strong>
+            <span>Show or hide stories by category label.</span>
+          </div>
+          <div class="atlas-benefit">
+            <strong>Inspect completion</strong>
+            <span>Read criteria and progress without leaving the graph.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <figure class="atlas-window reveal">
+      <div class="atlas-window-chrome" aria-hidden="true">
+        <div class="atlas-window-dots">
+          <span class="traffic-dot red"></span>
+          <span class="traffic-dot amber"></span>
+          <span class="traffic-dot green"></span>
+        </div>
+        <span class="atlas-window-address">127.0.0.1:4173</span>
+        <span class="atlas-window-mode">Read-only local view</span>
+      </div>
+
+      <a class="atlas-window-viewport" href="assets/project-atlas-screenshot.png" target="_blank" rel="noopener" aria-label="Open the full-size Project atlas screenshot">
+        <img
+          src="assets/project-atlas-screenshot.png"
+          width="2484"
+          height="1341"
+          loading="lazy"
+          decoding="async"
+          alt="Project Atlas visualization showing a GCP migration project connected to epics and user stories, with story-label filters and acceptance-criteria details."
+        />
+      </a>
+
+      <figcaption class="atlas-window-caption">
+        <div class="atlas-window-fact">
+          <span class="atlas-window-index">01</span>
+          <span><strong>Local by default</strong>No Linear credentials or configuration required.</span>
+        </div>
+        <div class="atlas-window-fact">
+          <span class="atlas-window-index">02</span>
+          <span><strong>Source stays untouched</strong>The visualization never modifies your Markdown.</span>
+        </div>
+        <div class="atlas-window-fact">
+          <span class="atlas-window-index">03</span>
+          <span><strong>Built for review</strong>Open the map, inspect the plan, and share the screen.</span>
+        </div>
+      </figcaption>
+    </figure>
+
   </div>
 </section>
 
