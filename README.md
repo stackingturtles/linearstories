@@ -97,6 +97,16 @@ linearstories import stories/login.md
 
 The CLI creates issues in Linear and writes the `linear_id` and `linear_url` back into your markdown file so that subsequent imports update the existing issues rather than creating duplicates.
 
+### 5. Visualize the hierarchy
+
+Launch the built-in project atlas for a single LinearStories markdown file:
+
+```bash
+linearstories visualize stories/login.md
+```
+
+The command parses the file locally, starts a server at `http://127.0.0.1:4173`, and opens the atlas in your default browser. It displays project-to-epic-to-story links, standalone stories, status, and acceptance-criteria completion without loading configuration or calling the Linear API. Existing Linear epic identifiers not defined in the file appear as read-only placeholder epics.
+
 ## Linear issue markdown template
 
 Each markdown file can contain one or more epics and user stories. The file structure is:
@@ -420,6 +430,37 @@ linearstories import --no-write-back stories/*.md
 
 # Import with an explicit config file
 linearstories import -c ./team-config.json stories/*.md
+```
+
+### `linearstories visualize`
+
+Render one LinearStories markdown file as an interactive local hierarchy. Epics can be expanded to show their user stories; standalone stories appear directly under the project. Acceptance criteria orbit each story as individual completion marks.
+
+```
+linearstories visualize <file> [options]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `<file>` | One markdown file containing epics and user stories |
+
+**Options:**
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-p, --port <port>` | Local HTTP server port | `4173` |
+| `--no-open` | Start the server without opening a browser | |
+
+The server binds to `127.0.0.1`, exposes only embedded visualization assets and the parsed graph, and stops when you press `Ctrl+C`. The command does not read `.linearrc.json`, require `LINEAR_API_KEY`, write to the markdown file, or contact Linear. The browser loads D3 and web fonts from their public CDNs.
+
+```bash
+# Open the atlas in the default browser
+linearstories visualize stories/current.md
+
+# Choose a port and open the URL manually
+linearstories visualize stories/current.md --port 8080 --no-open
 ```
 
 ### `linearstories export`
@@ -763,6 +804,7 @@ src/
     commands/
       import.ts           Import command registration
       export.ts           Export command registration
+      visualize.ts        Local visualization command registration
   config/
     loader.ts             Config discovery and loading
     schema.ts             Config validation
@@ -779,6 +821,10 @@ src/
     importer.ts           Import orchestration
     preflight.ts          Atomic remote validation and import planning
     exporter.ts           Export orchestration
+  visualization/
+    graph.ts              Parsed issue hierarchy and progress model
+    server.ts             Local embedded-asset HTTP server
+    assets/               Interactive project atlas UI
   types.ts                Shared TypeScript interfaces
   errors.ts               Custom error classes
 templates/

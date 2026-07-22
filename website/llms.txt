@@ -6,7 +6,7 @@ Canonical repository: https://github.com/stackingturtles/linearstories
 Human documentation: https://github.com/stackingturtles/linearstories/blob/main/README.md
 Markdown format: https://github.com/stackingturtles/linearstories/blob/main/docs/USER_STORY_FORMAT.md
 Releases: https://github.com/stackingturtles/linearstories/releases
-Current documented version: 1.3.0
+Current documented version: 1.4.0
 
 ## Core model
 
@@ -58,7 +58,7 @@ Minimal `.linearrc.json`:
 }
 ```
 
-`LINEAR_API_KEY` overrides the configured `apiKey`. An API key is required by configuration loading for all commands, including local `--dry-run`.
+`LINEAR_API_KEY` overrides the configured `apiKey`. Import and export use configuration; import requires an API key even for local `--dry-run`. `visualize` does not load configuration or require an API key.
 
 Do not put `Epic` in `defaultLabels`. It is an issue-type discriminator and must appear only on individual epics.
 
@@ -151,6 +151,35 @@ Supported issue metadata:
 - `status`: workflow state name for the effective team.
 
 `linear_id` present means update. Empty or absent means create. Successful creates write `linear_id` and `linear_url` back to the source Markdown unless `--no-write-back` is used.
+
+## Visualization
+
+Render one Markdown file as a local interactive project, epic, story, and acceptance-criteria graph:
+
+```bash
+linearstories visualize stories/project.md
+```
+
+Behavior:
+
+- Parses exactly one file with the canonical LinearStories parser.
+- Displays epic-linked stories beneath their epic and standalone stories beneath the project.
+- Displays an unresolved Linear-style parent identifier, such as `ENG-42`, as a read-only placeholder epic because visualization does not query Linear.
+- Generates deterministic local display IDs for issues without `linear_id`.
+- Fails before server startup when a local epic reference is missing or ambiguous.
+- Binds only to `127.0.0.1`; default port is `4173`.
+- Opens the default browser unless `--no-open` is passed.
+- Does not read config, call Linear, or modify the source file.
+- Serves issue data locally. The browser retrieves D3 and web fonts from public CDNs.
+
+```text
+linearstories visualize [options] <file>
+
+-p, --port <port>  Local HTTP server port; default 4173
+--no-open          Start the server without opening a browser
+```
+
+Stop the server with `Ctrl+C`.
 
 ## Safe import workflow
 
@@ -276,3 +305,4 @@ Exported epics retain the exact `Epic` label. Exported child issues use the stab
 8. Do not use `--allow-missing-labels` unless metadata loss is explicitly accepted.
 9. Use `--create-missing-labels` only with authorization to change the target team's taxonomy.
 10. Inspect the consolidated preflight report before retrying failures.
+11. Use `linearstories visualize <file>` when hierarchy or completion needs human visual review; it is read-only and does not need Linear credentials.

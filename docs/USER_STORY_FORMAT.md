@@ -246,6 +246,28 @@ linearstories import --allow-missing-labels stories/*.md
 
 `--dry-run` cannot be combined with remote validation or label options. `--preflight` cannot be combined with `--create-missing-labels`, and `--create-missing-labels` cannot be combined with `--allow-missing-labels`.
 
+## Visualization behavior
+
+Visualize one formatted markdown file without configuration or Linear API access:
+
+```bash
+linearstories visualize stories/project.md
+```
+
+The local atlas uses the same parser and issue-type rules as import:
+
+| Markdown content | Visualization |
+|------------------|---------------|
+| Epic with the exact `Epic` label | Expandable child of the project |
+| User story with a valid local `epic` title or identifier | Child of that epic |
+| User story with an existing Linear epic identifier not present in the file | Child of a read-only placeholder epic |
+| User story without `epic` | Direct child of the project |
+| Checked acceptance criterion | Completed radial mark around its story |
+| Missing `linear_id` | Deterministic local display identifier |
+| Unknown or ambiguous local epic reference | Command fails before starting the server |
+
+By default, the command binds to `127.0.0.1:4173` and opens the default browser. Use `--port <port>` to change the port or `--no-open` to suppress browser launch. It does not modify the source markdown. The browser loads D3 and web fonts from public CDNs; issue data remains served by the local process.
+
 ## Export behavior
 
 Exported issues retain their `Epic` labels. If an issue has a Linear parent, the serializer writes the parent's stable Linear identifier as `epic` metadata:
