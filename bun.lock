@@ -5,7 +5,7 @@
     "": {
       "name": "linear-user-stories-cli",
       "dependencies": {
-        "@linear/sdk": "^84.0.0",
+        "@linear/sdk": "^88.2.0",
         "chalk": "^5.6.2",
         "commander": "^14.0.3",
         "glob": "^13.0.4",
@@ -41,7 +41,7 @@
 
     "@isaacs/cliui": ["@isaacs/cliui@9.0.0", "", {}, "sha512-AokJm4tuBHillT+FpMtxQ60n8ObyXBatq7jD2/JA9dxbDDokKQm8KMht5ibGzLVU9IJDIKK4TPKgMHEYMn3lMg=="],
 
-    "@linear/sdk": ["@linear/sdk@84.0.0", "", { "dependencies": { "@graphql-typed-document-node/core": "^3.2.0" } }, "sha512-jPtGlY06zG86ba6cL78d4JB9m61YMHo3L0luMrtVFgeOounI/GK3S3c6Ncjw7cxWzcsepoNZD10mQYoT81uKKA=="],
+    "@linear/sdk": ["@linear/sdk@88.2.0", "", { "dependencies": { "@graphql-typed-document-node/core": "^3.2.0" } }, "sha512-nHs4MSFnnGYQZ0zWFlmYKuMLbgewkIjQag78F31DOkdavbJnfRp+YYZxaYHNvYJLfLbzp36/BGoCtR6xSrMssA=="],
 
     "@types/bun": ["@types/bun@1.3.9", "", { "dependencies": { "bun-types": "1.3.9" } }, "sha512-KQ571yULOdWJiMH+RIWIOZ7B2RXQGpL1YQrBtLIV3FqDcCu6FsbFUBwhdKUlCKUpS3PJDsHlJ1QKlpxoVR+xtw=="],
 
