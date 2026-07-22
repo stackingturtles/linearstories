@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="linearstories imports and exports structured epics and user stories with native Linear sub-issue links and testable acceptance criteria." />
+  <meta name="description" content="linearstories imports, exports, and visualizes structured epics and user stories with native Linear sub-issue links and testable acceptance criteria." />
   <meta name="robots" content="index, follow" />
 
   <!-- Open Graph -->
@@ -354,11 +354,11 @@ Users need secure access to protected features.
             <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
           </svg>
         </div>
-        <h3>Bi-directional sync</h3>
+        <h3>Local project atlas</h3>
         <p>
-          Stories updated in Linear flow back to Markdown. Changes in your
-          editor push back to Linear. Keep your source of truth wherever
-          your team prefers.
+          Run <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">linearstories visualize</code>
+          to explore projects, epics, stories, status, and acceptance-criteria
+          completion in an interactive browser graph.
         </p>
       </div>
 
@@ -647,7 +647,7 @@ Users need secure access to protected features.
         <span class="t-line">
           <span class="t-prompt">$ </span><span class="t-cmd">bun install -g linearstories</span>
         </span>
-        <span class="t-line t-out">+ linearstories@1.3.0</span>
+        <span class="t-line t-out">+ linearstories@1.4.0</span>
         <br />
 
         <span class="t-line">
@@ -678,6 +678,15 @@ Users need secure access to protected features.
           <span class="t-prompt">$ </span><span class="t-cmd">linearstories export --project "Q1 2026 Release"</span>
         </span>
         <span class="t-line t-success">Exported 3 issues to q1-2026-release.md</span>
+        <br />
+
+        <span class="t-line">
+          <span class="t-comment"># Visualize the exported hierarchy locally</span>
+        </span>
+        <span class="t-line">
+          <span class="t-prompt">$ </span><span class="t-cmd">linearstories visualize q1-2026-release.md</span>
+        </span>
+        <span class="t-line t-success">Visualizing 1 epic and 2 user stories at http://127.0.0.1:4173</span>
         <br />
 
         <span class="t-line">

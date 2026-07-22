@@ -1,0 +1,719 @@
+// Served as /app.js by the embedded visualization server.
+(() => {
+	const d3 = window.d3;
+	const graphStage = document.getElementById("graphStage");
+	const loadingState = document.getElementById("loadingState");
+	const inspector = document.getElementById("inspector");
+	const tooltip = document.getElementById("graphTooltip");
+	const svg = d3?.select("#graph");
+
+	const statusLabel = {
+		completed: "Completed",
+		"in-progress": "In progress",
+		"not-started": "Not started",
+	};
+
+	const radiusByType = {
+		project: 78,
+		epic: 62,
+		story: 42,
+	};
+
+	const state = {
+		graph: null,
+		index: new Map(),
+		parentById: new Map(),
+		expanded: new Set(),
+		selectedId: null,
+		positions: new Map(),
+		simulation: null,
+		zoom: null,
+		viewport: null,
+		renderVersion: 0,
+		resizeTimer: null,
+		hiddenLabels: new Set(),
+	};
+
+	function escapeHtml(value) {
+		return String(value ?? "")
+			.replaceAll("&", "&amp;")
+			.replaceAll("<", "&lt;")
+			.replaceAll(">", "&gt;")
+			.replaceAll('"', "&quot;")
+			.replaceAll("'", "&#039;");
+	}
+
+	function progressPercent(completed, total) {
+		return total > 0 ? Math.round((completed / total) * 100) : 0;
+	}
+
+	function labelLines(value, maxCharacters, maxLines) {
+		const words = String(value).split(/\s+/).filter(Boolean);
+		const lines = [];
+		let line = "";
+
+		for (const word of words) {
+			const proposed = line ? `${line} ${word}` : word;
+			if (proposed.length <= maxCharacters || line.length === 0) {
+				line = proposed;
+			} else {
+				lines.push(line);
+				line = word;
+			}
+			if (lines.length === maxLines) break;
+		}
+
+		if (lines.length < maxLines && line) lines.push(line);
+		const consumed = lines.join(" ").length;
+		if (consumed < String(value).length && lines.length > 0) {
+			const last = lines.length - 1;
+			lines[last] =
+				`${lines[last].replace(/[.,;:]$/, "").slice(0, Math.max(3, maxCharacters - 1))}…`;
+		}
+
+		return lines.slice(0, maxLines);
+	}
+
+	function registerHierarchy(project) {
+		state.index.clear();
+		state.parentById.clear();
+		state.index.set(project.id, project);
+
+		for (const child of project.children) {
+			state.index.set(child.id, child);
+			state.parentById.set(child.id, project.id);
+			if (child.type === "epic") {
+				for (const story of child.children) {
+					state.index.set(story.id, story);
+					state.parentById.set(story.id, child.id);
+				}
+			}
+		}
+	}
+
+	function collectStoryLabels(project) {
+		const counts = new Map();
+
+		for (const child of project.children) {
+			const stories = child.type === "story" ? [child] : child.children;
+
+			for (const story of stories) {
+				for (const label of story.labels ?? []) {
+					if (label.toLowerCase() === "epic") continue;
+					counts.set(label, (counts.get(label) ?? 0) + 1);
+				}
+			}
+		}
+
+		return [...counts.entries()].sort(([left], [right]) => left.localeCompare(right));
+	}
+
+	function isStoryVisible(story) {
+		return !(story.labels ?? []).some((label) => state.hiddenLabels.has(label));
+	}
+
+	function configureLabelFilters(project) {
+		const container = document.querySelector("#labelFilters");
+		const labels = collectStoryLabels(project);
+		container.replaceChildren();
+
+		if (labels.length === 0) {
+			const empty = document.createElement("span");
+			empty.className = "story-filters__empty";
+			empty.textContent = "No story labels";
+			container.append(empty);
+			return;
+		}
+
+		for (const [label, count] of labels) {
+			const button = document.createElement("button");
+			button.type = "button";
+			button.className = "story-filter";
+			button.textContent = label;
+			button.setAttribute("aria-pressed", "true");
+
+			const updateAccessibleText = (isActive) => {
+				const storyCount = `${count} ${count === 1 ? "story" : "stories"}`;
+				button.title = `${storyCount}. Click to ${isActive ? "hide" : "show"}.`;
+				button.setAttribute(
+					"aria-label",
+					`${label}: ${storyCount}, ${isActive ? "shown" : "hidden"}. Click to ${isActive ? "hide" : "show"}.`,
+				);
+			};
+
+			updateAccessibleText(true);
+			button.addEventListener("click", () => {
+				const shouldShow = state.hiddenLabels.has(label);
+
+				if (shouldShow) {
+					state.hiddenLabels.delete(label);
+				} else {
+					state.hiddenLabels.add(label);
+				}
+
+				button.setAttribute("aria-pressed", String(shouldShow));
+				updateAccessibleText(shouldShow);
+
+				const selected = state.index.get(state.selectedId);
+				if (selected?.type === "story" && !isStoryVisible(selected)) {
+					state.selectedId = state.parentById.get(selected.id) ?? project.id;
+				}
+
+				renderGraph(true);
+			});
+
+			container.append(button);
+		}
+	}
+
+	function visibleGraph() {
+		const project = state.graph.project;
+		const nodes = [{ ...project, depth: 0, parentId: null }];
+		const links = [];
+
+		if (!state.expanded.has(project.id)) return { nodes, links };
+
+		for (const child of project.children) {
+			if (child.type === "story" && !isStoryVisible(child)) continue;
+
+			nodes.push({ ...child, depth: 1, parentId: project.id });
+			links.push({ source: project.id, target: child.id, depth: 1 });
+
+			if (child.type !== "epic" || !state.expanded.has(child.id)) continue;
+			for (const story of child.children) {
+				if (!isStoryVisible(story)) continue;
+
+				nodes.push({ ...story, depth: 2, parentId: child.id });
+				links.push({ source: child.id, target: story.id, depth: 2 });
+			}
+		}
+
+		return { nodes, links };
+	}
+
+	function assignTargets(nodes, width, height) {
+		const center = { x: width / 2, y: height / 2 };
+		const visibleById = new Map(nodes.map((node) => [node.id, node]));
+		const project = nodes.find((node) => node.type === "project");
+		project.targetX = center.x;
+		project.targetY = center.y;
+
+		const rootChildren = nodes.filter((node) => node.depth === 1);
+		const rootOrbit = Math.max(190, Math.min(width, height) * 0.31);
+
+		rootChildren.forEach((child, index) => {
+			const angle = -Math.PI / 2 + (index / Math.max(1, rootChildren.length)) * Math.PI * 2;
+			child.layoutAngle = angle;
+			child.targetX = center.x + Math.cos(angle) * rootOrbit;
+			child.targetY = center.y + Math.sin(angle) * rootOrbit;
+		});
+
+		const epics = rootChildren.filter((node) => node.type === "epic");
+		for (const epic of epics) {
+			const stories = nodes.filter((node) => node.parentId === epic.id);
+			const ringCapacity = 6;
+
+			stories.forEach((story, index) => {
+				const ring = Math.floor(index / ringCapacity);
+				const ringStart = ring * ringCapacity;
+				const ringCount = Math.min(ringCapacity, stories.length - ringStart);
+				const positionInRing = index - ringStart;
+				const spread = Math.min(1.8, Math.max(0.75, (ringCount - 1) * 0.34));
+				const offset =
+					ringCount === 1 ? 0 : -spread / 2 + (positionInRing / (ringCount - 1)) * spread;
+				const storyAngle = epic.layoutAngle + offset;
+				const storyOrbit = 155 + ring * 102;
+
+				story.targetX = epic.targetX + Math.cos(storyAngle) * storyOrbit;
+				story.targetY = epic.targetY + Math.sin(storyAngle) * storyOrbit;
+			});
+		}
+
+		for (const node of nodes) {
+			const cached = state.positions.get(node.id);
+			const parent = visibleById.get(node.parentId);
+			const seed = Array.from(node.id).reduce((sum, character) => sum + character.charCodeAt(0), 0);
+			const jitter = (seed % 17) - 8;
+			node.x = cached?.x ?? parent?.x ?? node.targetX + jitter;
+			node.y = cached?.y ?? parent?.y ?? node.targetY - jitter;
+			node.radius = radiusByType[node.type];
+			if (node.type === "project") {
+				node.fx = center.x;
+				node.fy = center.y;
+			}
+		}
+	}
+
+	function linkEndpoints(link) {
+		const source = link.source;
+		const target = link.target;
+		const dx = target.x - source.x;
+		const dy = target.y - source.y;
+		const distance = Math.hypot(dx, dy) || 1;
+		const ux = dx / distance;
+		const uy = dy / distance;
+		const sourceOffset = source.radius + 4;
+		const targetOffset = target.radius + 9;
+
+		return {
+			x1: source.x + ux * sourceOffset,
+			y1: source.y + uy * sourceOffset,
+			x2: target.x - ux * targetOffset,
+			y2: target.y - uy * targetOffset,
+		};
+	}
+
+	function appendTextLines(selection, lines, firstY, lineHeight) {
+		lines.forEach((line, index) => {
+			selection
+				.append("tspan")
+				.attr("x", 0)
+				.attr("y", firstY + index * lineHeight)
+				.text(line);
+		});
+	}
+
+	function drawCriteriaTicks(nodeSelection) {
+		nodeSelection
+			.filter((node) => node.type === "story")
+			.append("g")
+			.attr("class", "node__criteria")
+			.selectAll("line")
+			.data((node) =>
+				node.criteria.map((criterion, index) => ({
+					...criterion,
+					index,
+					total: node.criteria.length,
+					radius: node.radius,
+				})),
+			)
+			.join("line")
+			.attr("class", (criterion) => `criterion-tick${criterion.completed ? " is-complete" : ""}`)
+			.attr("x1", (criterion) => {
+				const angle = -Math.PI / 2 + (criterion.index / criterion.total) * Math.PI * 2;
+				return Math.cos(angle) * (criterion.radius + 8);
+			})
+			.attr("y1", (criterion) => {
+				const angle = -Math.PI / 2 + (criterion.index / criterion.total) * Math.PI * 2;
+				return Math.sin(angle) * (criterion.radius + 8);
+			})
+			.attr("x2", (criterion) => {
+				const angle = -Math.PI / 2 + (criterion.index / criterion.total) * Math.PI * 2;
+				return Math.cos(angle) * (criterion.radius + 18);
+			})
+			.attr("y2", (criterion) => {
+				const angle = -Math.PI / 2 + (criterion.index / criterion.total) * Math.PI * 2;
+				return Math.sin(angle) * (criterion.radius + 18);
+			});
+	}
+
+	function drawNodeLabels(nodeSelection) {
+		nodeSelection.each(function drawLabel(node) {
+			const group = d3.select(this);
+
+			if (node.type === "project") {
+				group
+					.append("text")
+					.attr("class", "node__id")
+					.attr("y", -19)
+					.text((node.team || "LinearStories").toUpperCase());
+				const title = group.append("text").attr("class", "node__title");
+				appendTextLines(title, labelLines(node.title, 15, 2), -1, 15);
+				group
+					.append("text")
+					.attr("class", "node__meta")
+					.attr("y", 34)
+					.text(`${node.progress.completedEpics}/${node.progress.totalEpics} epics`);
+				return;
+			}
+
+			if (node.type === "epic") {
+				group.append("text").attr("class", "node__id").attr("y", -24).text(node.id);
+				const title = group.append("text").attr("class", "node__title");
+				appendTextLines(title, labelLines(node.shortTitle, 17, 3), -7, 12);
+				group
+					.append("text")
+					.attr("class", "node__meta")
+					.attr("y", 38)
+					.text(`${node.progress.completedStories}/${node.progress.totalStories}`);
+				return;
+			}
+
+			group.append("text").attr("class", "node__id").attr("y", -10).text(node.id);
+			const title = group.append("text").attr("class", "node__title");
+			appendTextLines(title, labelLines(node.shortTitle, 13, 2), 6, 11);
+			group
+				.append("text")
+				.attr("class", "node__meta")
+				.attr("y", 31)
+				.text(`${node.progress.completedCriteria}/${node.progress.totalCriteria}`);
+		});
+	}
+
+	function showTooltip(event, node) {
+		const bounds = graphStage.getBoundingClientRect();
+		const typeLabel = node.type === "story" ? "User story" : node.type;
+		tooltip.textContent = `${node.type === "project" ? "Project" : node.id} · ${typeLabel} · ${statusLabel[node.status]}`;
+		tooltip.style.left = `${Math.min(bounds.width - 295, Math.max(12, event.clientX - bounds.left + 14))}px`;
+		tooltip.style.top = `${Math.min(bounds.height - 72, Math.max(12, event.clientY - bounds.top + 14))}px`;
+		tooltip.classList.add("is-visible");
+	}
+
+	function hideTooltip() {
+		tooltip.classList.remove("is-visible");
+	}
+
+	function activateNode(node) {
+		state.selectedId = node.id;
+		if (node.type === "project" || node.type === "epic") {
+			if (state.expanded.has(node.id)) state.expanded.delete(node.id);
+			else state.expanded.add(node.id);
+			renderGraph(true);
+		} else {
+			updateSelection();
+			renderInspector(node);
+		}
+	}
+
+	function dragBehavior(simulation) {
+		return d3
+			.drag()
+			.on("start", (event, node) => {
+				if (!event.active) simulation.alphaTarget(0.22).restart();
+				if (node.type !== "project") {
+					node.fx = node.x;
+					node.fy = node.y;
+				}
+			})
+			.on("drag", (event, node) => {
+				if (node.type === "project") return;
+				node.fx = event.x;
+				node.fy = event.y;
+			})
+			.on("end", (event, node) => {
+				if (!event.active) simulation.alphaTarget(0);
+				if (node.type !== "project") {
+					node.fx = null;
+					node.fy = null;
+				}
+			});
+	}
+
+	function renderGraph(shouldFit = false) {
+		if (!state.graph || !d3) return;
+		const version = ++state.renderVersion;
+		const width = Math.max(620, graphStage.clientWidth);
+		const height = Math.max(570, graphStage.clientHeight);
+		const { nodes, links } = visibleGraph();
+		assignTargets(nodes, width, height);
+
+		state.simulation?.stop();
+		svg.attr("viewBox", `0 0 ${width} ${height}`);
+		state.viewport.selectAll("*").remove();
+
+		const linkLayer = state.viewport.append("g").attr("class", "links");
+		const nodeLayer = state.viewport.append("g").attr("class", "nodes");
+
+		const linkSelection = linkLayer
+			.selectAll("line")
+			.data(links, (link) => `${link.source}-${link.target}`)
+			.join("line")
+			.attr("class", (link) => `graph-link${link.depth === 1 ? " is-project-link" : ""}`)
+			.attr("marker-end", "url(#graph-arrow)");
+
+		const nodeSelection = nodeLayer
+			.selectAll("g")
+			.data(nodes, (node) => node.id)
+			.join("g")
+			.attr("class", (node) => `node${node.id === state.selectedId ? " is-selected" : ""}`)
+			.attr("data-status", (node) => node.status)
+			.attr("data-type", (node) => node.type)
+			.attr("role", "button")
+			.attr("tabindex", 0)
+			.attr("aria-label", (node) => `${node.id}: ${node.title}. ${statusLabel[node.status]}.`)
+			.on("pointerenter", showTooltip)
+			.on("pointermove", showTooltip)
+			.on("pointerleave", hideTooltip)
+			.on("click", (event, node) => {
+				if (event.defaultPrevented) return;
+				activateNode(node);
+			})
+			.on("keydown", (event, node) => {
+				if (event.key !== "Enter" && event.key !== " ") return;
+				event.preventDefault();
+				activateNode(node);
+			});
+
+		nodeSelection
+			.append("circle")
+			.attr("class", "node__selection")
+			.attr("r", (node) => node.radius + (node.type === "story" ? 25 : 10));
+
+		nodeSelection
+			.append("circle")
+			.attr("class", "node__body")
+			.attr("r", (node) => node.radius);
+
+		drawCriteriaTicks(nodeSelection);
+		drawNodeLabels(nodeSelection);
+
+		const expandable = nodeSelection.filter(
+			(node) => node.type === "project" || node.type === "epic",
+		);
+		const expandMarker = expandable
+			.append("g")
+			.attr("transform", (node) => `translate(${node.radius * 0.66},${node.radius * 0.66})`);
+		expandMarker.append("circle").attr("class", "node__expand-mark").attr("r", 10);
+		expandMarker
+			.append("text")
+			.attr("class", "node__expand-glyph")
+			.attr("dy", "0.34em")
+			.text((node) => (state.expanded.has(node.id) ? "−" : "+"));
+
+		const simulation = d3
+			.forceSimulation(nodes)
+			.force(
+				"link",
+				d3
+					.forceLink(links)
+					.id((node) => node.id)
+					.distance((link) => (link.depth === 1 ? 230 : 150))
+					.strength((link) => (link.depth === 1 ? 0.42 : 0.65)),
+			)
+			.force(
+				"charge",
+				d3.forceManyBody().strength((node) => {
+					if (node.type === "project") return -1500;
+					if (node.type === "epic") return -680;
+					return -240;
+				}),
+			)
+			.force(
+				"collision",
+				d3
+					.forceCollide()
+					.radius((node) => node.radius + (node.type === "story" ? 25 : 18))
+					.iterations(3),
+			)
+			.force("x", d3.forceX((node) => node.targetX).strength(0.16))
+			.force("y", d3.forceY((node) => node.targetY).strength(0.16))
+			.alpha(0.9)
+			.alphaDecay(0.045)
+			.velocityDecay(0.42)
+			.on("tick", () => {
+				linkSelection.each(function updateLink(link) {
+					const endpoints = linkEndpoints(link);
+					d3.select(this)
+						.attr("x1", endpoints.x1)
+						.attr("y1", endpoints.y1)
+						.attr("x2", endpoints.x2)
+						.attr("y2", endpoints.y2);
+				});
+				nodeSelection.attr("transform", (node) => `translate(${node.x},${node.y})`);
+				for (const node of nodes) state.positions.set(node.id, { x: node.x, y: node.y });
+			})
+			.on("end", () => {
+				if (version === state.renderVersion && shouldFit) fitView(nodes, width, height);
+			});
+
+		state.simulation = simulation;
+		nodeSelection.call(dragBehavior(simulation));
+		renderInspector(state.index.get(state.selectedId) ?? state.graph.project);
+	}
+
+	function fitView(nodesOverride, widthOverride, heightOverride) {
+		if (!state.graph || !state.zoom) return;
+		const { nodes } = nodesOverride ? { nodes: nodesOverride } : visibleGraph();
+		const positionedNodes =
+			nodesOverride ??
+			nodes.map((node) => ({
+				...node,
+				...(state.positions.get(node.id) ?? { x: 0, y: 0 }),
+				radius: radiusByType[node.type],
+			}));
+		const width = widthOverride ?? Math.max(620, graphStage.clientWidth);
+		const height = heightOverride ?? Math.max(570, graphStage.clientHeight);
+		if (positionedNodes.length === 0) return;
+
+		const margin = 74;
+		const minX = d3.min(positionedNodes, (node) => node.x - node.radius - margin);
+		const maxX = d3.max(positionedNodes, (node) => node.x + node.radius + margin);
+		const minY = d3.min(positionedNodes, (node) => node.y - node.radius - margin);
+		const maxY = d3.max(positionedNodes, (node) => node.y + node.radius + margin);
+		const boundsWidth = Math.max(1, maxX - minX);
+		const boundsHeight = Math.max(1, maxY - minY);
+		const scale = Math.max(0.18, Math.min(1.1, width / boundsWidth, height / boundsHeight));
+		const translateX = width / 2 - (scale * (minX + maxX)) / 2;
+		const translateY = height / 2 - (scale * (minY + maxY)) / 2;
+		const transform = d3.zoomIdentity.translate(translateX, translateY).scale(scale);
+		const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+		const target = reducedMotion ? svg : svg.transition().duration(520).ease(d3.easeCubicOut);
+		target.call(state.zoom.transform, transform);
+	}
+
+	function updateSelection() {
+		state.viewport
+			?.selectAll(".node")
+			.classed("is-selected", (node) => node.id === state.selectedId);
+	}
+
+	function renderInspector(node) {
+		if (!node) return;
+		const typeLabel = node.type === "story" ? "User story" : node.type;
+		let completed = 0;
+		let total = 0;
+		let progressLabel = "";
+
+		if (node.type === "project") {
+			completed = node.progress.completedStories;
+			total = node.progress.totalStories;
+			progressLabel = `${completed} of ${total} stories complete`;
+		} else if (node.type === "epic") {
+			completed = node.progress.completedStories;
+			total = node.progress.totalStories;
+			progressLabel = `${completed} of ${total} stories complete`;
+		} else {
+			completed = node.progress.completedCriteria;
+			total = node.progress.totalCriteria;
+			progressLabel = `${completed} of ${total} criteria complete`;
+		}
+
+		const criteriaMarkup =
+			node.type === "story"
+				? `
+          <h3 class="inspector__section-title">Acceptance criteria</h3>
+          <ul class="criteria-list">
+            ${node.criteria
+							.map(
+								(criterion) => `
+				  <li class="criterion ${criterion.completed ? "is-complete" : "is-not-started"}">
+                    <span class="criterion__dash" aria-hidden="true"></span>
+                    <span>${escapeHtml(criterion.text)}</span>
+                  </li>`,
+							)
+							.join("")}
+          </ul>`
+				: "";
+
+		const labels = (node.labels ?? []).filter((label) => label !== "Epic");
+		const tagsMarkup = labels.length
+			? `<div class="inspector__tags">${labels
+					.map((label) => `<span class="inspector__tag">${escapeHtml(label)}</span>`)
+					.join("")}</div>`
+			: "";
+		const linearLink = node.linearUrl?.startsWith("https://")
+			? `<a class="inspector__link" href="${escapeHtml(node.linearUrl)}" target="_blank" rel="noreferrer">Open in Linear ↗</a>`
+			: "";
+
+		inspector.innerHTML = `
+      <span class="inspector__kicker">${escapeHtml(typeLabel)} · ${escapeHtml(node.id)}</span>
+      <h2>${escapeHtml(node.title)}</h2>
+      <div class="inspector__status" data-status="${escapeHtml(node.status)}">${escapeHtml(statusLabel[node.status])}</div>
+      <div class="inspector__progress">
+        <div class="inspector__progress-label">
+          <span>${escapeHtml(progressLabel)}</span>
+          <span>${progressPercent(completed, total)}%</span>
+        </div>
+        <div class="inspector__progress-track" aria-hidden="true">
+          <div class="inspector__progress-fill" style="width: ${progressPercent(completed, total)}%"></div>
+        </div>
+      </div>
+      ${criteriaMarkup}
+      ${tagsMarkup}
+      ${linearLink}
+    `;
+	}
+
+	function updateMetrics(graph) {
+		const progress = graph.project.progress;
+		document.getElementById("epicMetric").textContent =
+			`${progress.completedEpics}/${progress.totalEpics}`;
+		document.getElementById("storyMetric").textContent =
+			`${progress.completedStories}/${progress.totalStories}`;
+		document.getElementById("criteriaMetric").textContent =
+			`${progress.completedCriteria}/${progress.totalCriteria}`;
+		document.getElementById("sourceLabel").textContent = `Source · ${graph.source}`;
+		document.getElementById("generatedLabel").textContent =
+			`Generated · ${new Date(graph.generatedAt).toLocaleString()}`;
+	}
+
+	function configureSvg() {
+		svg.selectAll("*").remove();
+		const definitions = svg.append("defs");
+		definitions
+			.append("marker")
+			.attr("id", "graph-arrow")
+			.attr("viewBox", "0 -5 10 10")
+			.attr("refX", 8)
+			.attr("refY", 0)
+			.attr("markerWidth", 5)
+			.attr("markerHeight", 5)
+			.attr("orient", "auto")
+			.append("path")
+			.attr("d", "M0,-4L9,0L0,4")
+			.attr("fill", "var(--ink)");
+
+		state.viewport = svg.append("g").attr("class", "graph-viewport");
+		state.zoom = d3
+			.zoom()
+			.scaleExtent([0.16, 3.2])
+			.on("zoom", (event) => state.viewport.attr("transform", event.transform));
+		svg.call(state.zoom).on("dblclick.zoom", null);
+	}
+
+	function configureControls() {
+		document.getElementById("collapseButton").addEventListener("click", () => {
+			state.expanded.clear();
+			state.selectedId = state.graph.project.id;
+			renderGraph(true);
+		});
+
+		document.getElementById("expandButton").addEventListener("click", () => {
+			state.expanded.add(state.graph.project.id);
+			for (const child of state.graph.project.children) {
+				if (child.type === "epic") state.expanded.add(child.id);
+			}
+			renderGraph(true);
+		});
+
+		document.getElementById("fitButton").addEventListener("click", () => fitView());
+
+		const observer = new ResizeObserver(() => {
+			window.clearTimeout(state.resizeTimer);
+			state.resizeTimer = window.setTimeout(() => renderGraph(true), 160);
+		});
+		observer.observe(graphStage);
+	}
+
+	function showError(error) {
+		console.error(error);
+		loadingState.textContent =
+			"Unable to load the project graph. Check the browser console for details.";
+		inspector.innerHTML = `
+      <span class="inspector__kicker">Graph unavailable</span>
+      <h2>Data could not be loaded</h2>
+      <p>Restart linearstories visualize and reload this page.</p>
+    `;
+	}
+
+	async function initialise() {
+		if (!d3) throw new Error("D3 failed to load.");
+		const response = await fetch("data/project-graph.json", { cache: "no-store" });
+		if (!response.ok) throw new Error(`Graph data request failed: ${response.status}`);
+		const graph = await response.json();
+		if (!graph?.project?.children) throw new Error("Graph data has an invalid shape.");
+
+		state.graph = graph;
+		state.selectedId = graph.project.id;
+		state.expanded = new Set([graph.project.id]);
+		registerHierarchy(graph.project);
+		configureLabelFilters(graph.project);
+		updateMetrics(graph);
+		configureSvg();
+		configureControls();
+		loadingState.hidden = true;
+		renderGraph(true);
+	}
+
+	initialise().catch(showError);
+})();
