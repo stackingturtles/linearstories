@@ -29,8 +29,6 @@ export interface LoadConfigOptions {
 export async function loadConfig(options?: LoadConfigOptions): Promise<ResolvedConfig> {
 	const configPath = resolveConfigPath(options);
 	const raw = configPath ? await readConfigFile(configPath) : {};
-
-	// Validate shape (flat or multi-context)
 	assertConfigFile(raw);
 
 	// Resolve multi-context → flat CliConfig
@@ -38,7 +36,9 @@ export async function loadConfig(options?: LoadConfigOptions): Promise<ResolvedC
 
 	if (isMultiContextConfig(raw)) {
 		const multiConfig = raw as MultiContextConfig;
-		const contextName = options?.context;
+		const contextName =
+			options?.context ??
+			(multiConfig.contexts.length === 1 ? multiConfig.contexts[0]?.name : undefined);
 
 		if (!contextName) {
 			const names = multiConfig.contexts.map((c) => c.name).join(", ");
@@ -94,7 +94,7 @@ export async function loadConfig(options?: LoadConfigOptions): Promise<ResolvedC
  * Returns `undefined` when no config file is found (which is okay if
  * LINEAR_API_KEY is set in the environment).
  */
-function resolveConfigPath(options?: LoadConfigOptions): string | undefined {
+export function resolveConfigPath(options?: LoadConfigOptions): string | undefined {
 	// 1. Explicit path
 	if (options?.configPath) {
 		if (!existsSync(options.configPath)) {
@@ -111,8 +111,7 @@ function resolveConfigPath(options?: LoadConfigOptions): string | undefined {
 	}
 
 	// 3. ~/.config/linearstories/config.json
-	const home = process.env.HOME ?? homedir();
-	const globalPath = join(home, ".config", "linearstories", "config.json");
+	const globalPath = getUserConfigPath();
 	if (existsSync(globalPath)) {
 		return globalPath;
 	}
@@ -120,18 +119,26 @@ function resolveConfigPath(options?: LoadConfigOptions): string | undefined {
 	return undefined;
 }
 
+/** Returns the canonical user-level config path used by context commands. */
+export function getUserConfigPath(home = process.env.HOME ?? homedir()): string {
+	return join(home, ".config", "linearstories", "config.json");
+}
+
 /**
  * Reads and parses a JSON config file. Throws ConfigError on I/O or
  * parse failures.
  */
-async function readConfigFile(filePath: string): Promise<unknown> {
+export async function readConfigFile(filePath: string): Promise<CliConfig | MultiContextConfig> {
 	try {
 		const text = await Bun.file(filePath).text();
+		let parsed: unknown;
 		try {
-			return JSON.parse(text);
+			parsed = JSON.parse(text);
 		} catch {
 			throw new ConfigError(`Malformed JSON in config file: ${filePath}`);
 		}
+		assertConfigFile(parsed);
+		return parsed;
 	} catch (error) {
 		if (error instanceof ConfigError) {
 			throw error;

@@ -15,4 +15,9 @@ test("llms.txt documents the agent-safe CLI workflow", () => {
 	expect(content).toContain("lowercase `epic` remains a user-story category");
 	expect(content).toContain("does not load configuration or require an API key");
 	expect(content).toContain("--no-open");
+	expect(content).toContain("linearstories initctx");
+	expect(content).toContain("linearstories updatectx <name>");
+	expect(content).toContain("linearstories deletectx <name>");
+	expect(content).toContain("linearstories contexts");
+	expect(content).toContain("never includes the token itself");
 });

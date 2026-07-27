@@ -6,7 +6,7 @@ Canonical repository: https://github.com/stackingturtles/linearstories
 Human documentation: https://github.com/stackingturtles/linearstories/blob/main/README.md
 Markdown format: https://github.com/stackingturtles/linearstories/blob/main/docs/USER_STORY_FORMAT.md
 Releases: https://github.com/stackingturtles/linearstories/releases
-Current documented version: 1.4.0
+Current documented version: 1.5.0
 
 ## Core model
 
@@ -40,6 +40,39 @@ linearstories --version
 Use `bunx linearstories ...` only for a one-off trial. Release binaries can also be placed on `PATH`.
 
 ## Configuration
+
+Preferred interactive setup:
+
+```bash
+linearstories initctx
+```
+
+`initctx` prompts for a context name, masked Linear API token, default team, default project, and comma-separated default labels. It edits the effective discovered config or creates `~/.config/linearstories/config.json`, with `0600` file permissions. Use `--config <path>` to target another file. If a legacy flat config is migrated, it is retained as the `default` context.
+
+Update an existing context directly:
+
+```bash
+linearstories updatectx orgA
+```
+
+`updatectx <name>` preloads the current defaults, preserves the stored token when its masked prompt is left blank, and fails without writing when the context does not exist. It supports `--config <path>`.
+
+Delete an existing context with confirmation:
+
+```bash
+linearstories deletectx orgA
+```
+
+`deletectx <name>` preserves all other contexts and removes the config file when the deleted context was the last one. Cancellation and unknown names leave the file unchanged. It supports `--config <path>`.
+
+Inspect contexts without exposing token values:
+
+```bash
+linearstories contexts
+linearstories ctx
+```
+
+Both listing forms support `--config <path>`. Output reports whether each token is configured but never includes the token itself.
 
 Configuration discovery order:
 
@@ -78,7 +111,7 @@ Named contexts are supported:
 }
 ```
 
-Select one with `--context orgA`.
+The only named context is selected automatically. When two or more contexts exist, select one with `--context orgA`.
 
 ## Target precedence
 
@@ -275,6 +308,24 @@ Invalid combinations:
 - `--create-missing-labels` with `--allow-missing-labels`
 
 The command exits nonzero when validation or import results contain failures.
+
+## Context commands
+
+```text
+linearstories initctx [--config <path>]
+linearstories updatectx <name> [--config <path>]
+linearstories deletectx <name> [--config <path>]
+linearstories contexts [--config <path>]
+linearstories ctx [--config <path>]
+```
+
+- `initctx` is interactive and intended for human setup. Agents and automation may write the documented JSON shape directly.
+- `updatectx <name>` updates only an existing context and never creates the requested name.
+- `deletectx <name>` requires confirmation and removes the config file after its final context.
+- Reusing a context name requires confirmation before replacement.
+- Leaving the token prompt blank while updating preserves the stored token.
+- `Epic` is rejected as a default label because it is the issue-type discriminator.
+- `contexts` and `ctx` never emit stored API-token values.
 
 ## Export
 

@@ -167,6 +167,23 @@ describe("loadConfig", () => {
 	// ------------------------------------------------------------------
 
 	describe("multi-context config", () => {
+		test("automatically selects the only configured context", async () => {
+			const tempDir = mkdtempSync(join(tmpdir(), "linearstories-single-context-"));
+			try {
+				const configPath = join(tempDir, "config.json");
+				writeFileSync(
+					configPath,
+					JSON.stringify({ contexts: [{ name: "dev", apiKey: "lin_api_dev_minimal" }] }),
+				);
+				const config = await loadConfig({ configPath });
+
+				expect(config.apiKey).toBe("lin_api_dev_minimal");
+				expect(config.defaultTeam).toBeNull();
+			} finally {
+				rmSync(tempDir, { recursive: true, force: true });
+			}
+		});
+
 		test("selects correct context by name (orgA)", async () => {
 			const configPath = join(FIXTURES_DIR, "multi-context.json");
 			const config = await loadConfig({ configPath, context: "orgA" });

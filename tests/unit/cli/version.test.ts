@@ -39,6 +39,20 @@ test("visualize help exposes the local server options", () => {
 	expect(output).toContain("--no-open");
 });
 
+test("CLI help exposes context setup and listing commands", () => {
+	const result = Bun.spawnSync(["bun", "run", "src/cli/index.ts", "--help"], {
+		cwd: new URL("../../..", import.meta.url).pathname,
+		env: { ...process.env, PATH: `${process.env.HOME}/.bun/bin:${process.env.PATH}` },
+	});
+	const output = result.stdout.toString();
+
+	expect(result.exitCode).toBe(0);
+	expect(output).toContain("initctx");
+	expect(output).toContain("updatectx [options] <name>");
+	expect(output).toContain("deletectx [options] <name>");
+	expect(output).toContain("contexts|ctx");
+});
+
 test("visualize summary pluralizes issue counts", () => {
 	const graph = {
 		project: { progress: { totalEpics: 1, totalStories: 2 } },
