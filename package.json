@@ -34,9 +34,10 @@
   "scripts": {
     "dev": "bun run src/cli/index.ts",
     "test": "bun test",
-    "lint": "bunx biome check ./src ./tests",
-    "format": "bunx biome format --write ./src ./tests",
-    "build": "bun build src/cli/index.ts --compile --outfile linearstories"
+    "lint": "bunx biome check ./src ./tests ./scripts",
+    "format": "bunx biome format --write ./src ./tests ./scripts",
+    "build": "bun build src/cli/index.ts --compile --outfile linearstories",
+    "release:npm": "bun scripts/release-npm.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.2",

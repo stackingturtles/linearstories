@@ -842,6 +842,24 @@ bun build src/cli/index.ts --compile --outfile linearstories
 
 This produces a self-contained `linearstories` executable that does not require Bun at runtime.
 
+### Publish a release
+
+Maintainers can validate, publish, and tag the version in `package.json` with one command:
+
+```bash
+bun run release:npm --dry-run
+bun run release:npm
+```
+
+The release command requires a clean `main` branch synchronized with `origin/main`. It installs
+from the lockfile, runs the tests and linter, checks npm authentication and package contents,
+asks for confirmation, publishes to npm, verifies the published version, and pushes the matching
+`vX.Y.Z` tag. The tag triggers the GitHub binary release workflow.
+
+Use `bun run release:npm --yes` only when the final confirmation needs to be skipped. The command
+is safe to rerun after a partial release: if npm publishing succeeded but tag pushing failed, it
+will skip the existing npm version and complete the tag.
+
 ## Contributing
 
 ### Running the test suite
@@ -904,6 +922,8 @@ src/
     assets/               Interactive project atlas UI
   types.ts                Shared TypeScript interfaces
   errors.ts               Custom error classes
+scripts/
+  release-npm.ts          Guarded npm publish and GitHub tag workflow
 templates/
   user-story.md           Example user story template
 docs/
