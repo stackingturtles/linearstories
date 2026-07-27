@@ -48,4 +48,15 @@ describe("website project atlas showcase", () => {
 		expect(html).toContain('href="https://linearstories.com/llms.txt"');
 		expect(html).toContain('aria-label="Copy agent documentation URL"');
 	});
+
+	test("promotes guided and token-safe context management", async () => {
+		const html = await Bun.file(new URL("website/index.html", root)).text();
+
+		expect(html).toContain("linearstories initctx");
+		expect(html).toContain("updatectx &lt;name&gt;");
+		expect(html).toContain("deletectx &lt;name&gt;");
+		expect(html).toContain("linearstories ctx");
+		expect(html).toContain("No config paths or JSON editing required.");
+		expect(html).toContain("the prompt masks it");
+	});
 });

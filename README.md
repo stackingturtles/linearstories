@@ -41,20 +41,27 @@ bunx linearstories import stories/*.md
 
 For regular use, prefer the installed `linearstories` command. It starts directly and keeps the version you installed explicit rather than resolving a package through `bunx` on each environment.
 
-### 2. Create a config file
+### 2. Create a context
 
-Create `.linearrc.json` in your project root:
+Run the interactive setup. It masks the API token while you type and stores the resulting config in the correct location:
 
-```json
-{
-  "apiKey": "lin_api_xxxxxxxxxxxxxxxxxxxx",
-  "defaultTeam": "Engineering",
-  "defaultProject": "Q1 2026 Release",
-  "defaultLabels": ["User Story"]
-}
+```bash
+linearstories initctx
 ```
 
-Alternatively, set the `LINEAR_API_KEY` environment variable and skip the `apiKey` field.
+The wizard captures a context name, API token, default team, default project, and default labels. With no existing config, it creates `~/.config/linearstories/config.json`. You can leave the token blank when `LINEAR_API_KEY` is set.
+
+Update that context later without locating or editing the config file:
+
+```bash
+linearstories updatectx work
+```
+
+Delete an obsolete context with a confirmation prompt:
+
+```bash
+linearstories deletectx work
+```
 
 ### 3. Write your first story
 
@@ -279,6 +286,27 @@ User should be able to reset their password via email link.
 
 ## Configuration
 
+### Interactive context setup
+
+Use the guided TUI instead of creating or locating config files manually:
+
+```bash
+linearstories initctx
+```
+
+The wizard uses the first config found by the normal discovery order, or creates `~/.config/linearstories/config.json` when none exists. It masks API-token input, creates parent directories, and writes the config with user-only `0600` permissions. Pass `--config <path>` to target a specific file.
+
+Running `initctx` again adds another named context. Choosing an existing name asks before updating it. For a direct edit, run `linearstories updatectx <name>`; it preloads that context's current defaults and fails without writing if the name does not exist. Leaving the masked token blank preserves the stored token. Use `linearstories deletectx <name>` to delete with confirmation; deleting the final context removes the now-empty config file. If a context command encounters a legacy flat config, it addresses that configuration as a context named `default`.
+
+List the effective contexts in a readable, token-safe format:
+
+```bash
+linearstories contexts
+linearstories ctx       # abbreviated form
+```
+
+The listing shows whether a token is configured but never prints the token value. It also supports `--config <path>`.
+
 ### Config file format
 
 The config file is a JSON object with the following fields:
@@ -345,7 +373,7 @@ If you work across multiple Linear organizations or environments, you can define
 }
 ```
 
-Select a context with the `--context` flag:
+When a config contains one named context, linearstories selects it automatically. Select a context with `--context` when two or more are configured:
 
 ```bash
 # Use orgA context
@@ -357,7 +385,7 @@ linearstories export --context orgB -o design-stories.md
 
 Each context entry supports the same fields as the flat config (`apiKey`, `defaultTeam`, `defaultProject`, `defaultLabels`) plus a required `name`. Only `name` is required per entry; other fields are optional.
 
-If a multi-context config is detected and no `--context` flag is provided, the CLI prints the available context names and exits with an error.
+If multiple contexts are detected and no `--context` flag is provided, the CLI prints the available context names and exits with an error.
 
 The `LINEAR_API_KEY` environment variable still takes precedence over the selected context's `apiKey`.
 
@@ -370,6 +398,47 @@ linearstories import --config ~/.config/linearstories/org-a.json stories/*.md
 ```
 
 ## CLI reference
+
+### `linearstories initctx`
+
+Interactively create or update a named context. The wizard stores the config at the effective discovered path, falling back to `~/.config/linearstories/config.json`.
+
+```text
+linearstories initctx [options]
+
+-c, --config <path>  Config file to create or update
+```
+
+### `linearstories contexts` / `linearstories ctx`
+
+List context names and defaults without exposing API-token values.
+
+```text
+linearstories contexts [options]
+linearstories ctx [options]
+
+-c, --config <path>  Config file to inspect
+```
+
+### `linearstories updatectx`
+
+Interactively update an existing named context. Current team, project, and labels are preloaded; leaving the masked token blank keeps its stored value. The command never creates a missing context.
+
+```text
+linearstories updatectx <name> [options]
+
+-c, --config <path>  Config file containing the context
+```
+
+### `linearstories deletectx`
+
+Delete an existing named context after confirmation. Other contexts are preserved; deleting the final context removes the config file. Cancellation and unknown names never modify the file.
+
+```text
+linearstories deletectx <name> [options]
+
+-c, --config <path>  Config file containing the context
+```
 
 ### `linearstories import`
 

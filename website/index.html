@@ -402,9 +402,11 @@ Users need secure access to protected features.
         </div>
         <h3>Multi-org contexts</h3>
         <p>
-          Define named contexts for each Linear organization in a single config
-          file. Switch between them with <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">--context orgA</code> — each
-          context carries its own API key, default team, and project.
+          Create named contexts with <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">linearstories initctx</code>,
+          revise or remove one directly with <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">updatectx &lt;name&gt;</code>
+          or <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">deletectx &lt;name&gt;</code>,
+          then inspect them safely with <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent-mid)">linearstories ctx</code>.
+          Each context carries its own hidden API key, default team, and project.
         </p>
       </div>
 
@@ -695,8 +697,8 @@ Users need secure access to protected features.
       <span class="section-label">Quick start</span>
       <h2 class="section-heading">Three commands to your first import</h2>
       <p class="section-sub">
-        Install once, point the CLI at your Markdown issues, and keep your Linear board in sync.
-        No configuration file is needed for a basic setup — just your API key.
+        Install once, let the guided setup store your Linear context, then point the CLI at your Markdown issues.
+        No config paths or JSON editing required.
       </p>
 
       <div class="quickstart-tips">
@@ -704,8 +706,8 @@ Users need secure access to protected features.
           <strong>Linear API key</strong>
           Generate a personal API key at
           <code>linear.app/settings/api</code>.
-          Set it as <code>LINEAR_API_KEY</code> in your environment or
-          add it as <code>apiKey</code> in <code>.linearrc.json</code>.
+          Paste it into <code>linearstories initctx</code>; the prompt masks it and
+          writes a user-only config file. <code>LINEAR_API_KEY</code> remains available for CI.
         </div>
         <div class="tip">
           <strong>Run it directly</strong>
@@ -736,15 +738,17 @@ Users need secure access to protected features.
         <span class="t-line">
           <span class="t-prompt">$ </span><span class="t-cmd">bun install -g linearstories</span>
         </span>
-        <span class="t-line t-out">+ linearstories@1.4.0</span>
+        <span class="t-line t-out">+ linearstories@1.5.0</span>
         <br />
 
         <span class="t-line">
-          <span class="t-comment"># 2. Set your Linear API key</span>
+          <span class="t-comment"># 2. Create a context with guided setup</span>
         </span>
         <span class="t-line">
-          <span class="t-prompt">$ </span><span class="t-cmd">export LINEAR_API_KEY=lin_api_xxxx</span>
+          <span class="t-prompt">$ </span><span class="t-cmd">linearstories initctx</span>
         </span>
+        <span class="t-line t-out">Context name: work</span>
+        <span class="t-line t-out">Saved "work" to ~/.config/linearstories/config.json</span>
         <br />
 
         <span class="t-line">
