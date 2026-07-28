@@ -3,6 +3,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { LinearClient } from "@linear/sdk";
+import { ResolverError } from "../../../src/errors.ts";
 import { exportStories } from "../../../src/sync/exporter.ts";
 import type { ResolvedConfig } from "../../../src/types.ts";
 
@@ -40,8 +41,8 @@ function createMockIssueNode(overrides: Record<string, unknown> = {}) {
 		state: Promise.resolve({ name: "Backlog" }),
 		assignee: Promise.resolve({ email: "jane@co.com", displayName: "Jane" }),
 		labels: () => Promise.resolve({ nodes: [{ name: "Feature" }] }),
-		project: Promise.resolve({ name: "Q1 Release" }),
-		team: Promise.resolve({ name: "Engineering", key: "ENG" }),
+		project: Promise.resolve({ id: PROJECT_UUID, name: "Q1 Release" }),
+		team: Promise.resolve({ id: TEAM_UUID, name: "Engineering", key: "ENG" }),
 		parent: Promise.resolve(undefined),
 		...overrides,
 	};
@@ -52,17 +53,28 @@ function createMockIssueNode(overrides: Record<string, unknown> = {}) {
 // ---------------------------------------------------------------------------
 
 function createMockClient(overrides: Record<string, unknown> = {}) {
+	const issues = (overrides.issues ??
+		(async () => ({
+			nodes: [],
+			pageInfo: { hasNextPage: false, endCursor: null },
+		}))) as (options: Record<string, unknown>) => Promise<{
+		nodes: Array<Record<string, unknown>>;
+		pageInfo: { hasNextPage: boolean; endCursor: string | null };
+	}>;
+	const { issues: _issues, ...clientOverrides } = overrides;
+
 	return {
 		teams: async () => ({ nodes: [{ id: TEAM_UUID }] }),
 		projects: async () => ({ nodes: [{ id: PROJECT_UUID }] }),
 		issueLabels: async () => ({ nodes: [] }),
 		users: async () => ({ nodes: [] }),
 		workflowStates: async () => ({ nodes: [] }),
-		issues: async () => ({
-			nodes: [],
-			pageInfo: { hasNextPage: false, endCursor: null },
-		}),
-		...overrides,
+		client: {
+			request: async (_query: string, variables: Record<string, unknown>) => ({
+				issues: await issues(variables),
+			}),
+		},
+		...clientOverrides,
 	} as unknown as LinearClient;
 }
 
@@ -100,7 +112,10 @@ describe("exportStories", () => {
 
 	test("fetches issues from Linear using provided filters", async () => {
 		const issuesFn = mock(async (opts: Record<string, unknown>) => {
-			expect(opts.filter).toBeDefined();
+			expect(opts.filter).toEqual({
+				project: { id: { eq: PROJECT_UUID } },
+				team: { id: { eq: TEAM_UUID } },
+			});
 			return {
 				nodes: [createMockIssueNode()],
 				pageInfo: { hasNextPage: false, endCursor: null },
@@ -112,11 +127,225 @@ describe("exportStories", () => {
 		const result = await exportStories(client, {
 			config: defaultConfig,
 			filters: { project: "Q1 Release" },
+			team: "Engineering",
 			outputPath,
 		});
 
 		expect(issuesFn).toHaveBeenCalled();
 		expect(result.count).toBe(1);
+	});
+
+	test("applies top-level Epic and team filters together", async () => {
+		const issuesFn = mock(async (opts: Record<string, unknown>) => {
+			expect(opts.filter).toEqual({
+				team: { id: { eq: TEAM_UUID } },
+				labels: { name: { eq: "Epic" } },
+				parent: { null: true },
+			});
+			return {
+				nodes: [createMockIssueNode({ labels: { nodes: [{ name: "Epic" }] } })],
+				pageInfo: { hasNextPage: false, endCursor: null },
+			};
+		});
+		const outputPath = join(tmpDir, "epics.md");
+
+		await exportStories(createMockClient({ issues: issuesFn }), {
+			config: defaultConfig,
+			filters: { label: "Epic", topLevelOnly: true },
+			team: "Engineering",
+			outputPath,
+		});
+
+		expect(issuesFn).toHaveBeenCalledTimes(1);
+		expect(readFileSync(outputPath, "utf-8")).toContain("labels: [Epic]");
+	});
+
+	test("fails closed when team resolution fails without querying or overwriting output", async () => {
+		const issuesFn = mock(async () => {
+			throw new Error("issues must not be queried");
+		});
+		const outputPath = join(tmpDir, "existing.md");
+		await Bun.write(outputPath, "keep this content");
+		const client = createMockClient({
+			teams: async () => ({ nodes: [] }),
+			issues: issuesFn,
+		});
+
+		await expect(
+			exportStories(client, {
+				config: defaultConfig,
+				filters: { project: "ARC-FB Prototype" },
+				team: "CMDT",
+				outputPath,
+			}),
+		).rejects.toThrow('Team not found: "CMDT"');
+
+		expect(issuesFn).toHaveBeenCalledTimes(0);
+		expect(readFileSync(outputPath, "utf-8")).toBe("keep this content");
+	});
+
+	test("fails closed when project resolution fails without querying or creating output", async () => {
+		const issuesFn = mock(async () => {
+			throw new Error("issues must not be queried");
+		});
+		const outputPath = join(tmpDir, "missing-project.md");
+		const client = createMockClient({
+			projects: async () => ({ nodes: [] }),
+			issues: issuesFn,
+		});
+
+		await expect(
+			exportStories(client, {
+				config: defaultConfig,
+				filters: { project: "Missing project" },
+				team: "Engineering",
+				outputPath,
+			}),
+		).rejects.toThrow('Project not found: "Missing project"');
+
+		expect(issuesFn).toHaveBeenCalledTimes(0);
+		expect(existsSync(outputPath)).toBe(false);
+	});
+
+	test("requires a team to resolve a project filter", async () => {
+		const outputPath = join(tmpDir, "missing-team.md");
+
+		await expect(
+			exportStories(createMockClient(), {
+				config: defaultConfig,
+				filters: { project: "Q1 Release" },
+				outputPath,
+			}),
+		).rejects.toBeInstanceOf(ResolverError);
+
+		expect(existsSync(outputPath)).toBe(false);
+	});
+
+	test("does not overwrite output when the issue query fails", async () => {
+		const outputPath = join(tmpDir, "api-failure.md");
+		await Bun.write(outputPath, "original export");
+		const client = createMockClient({
+			issues: async () => {
+				throw new Error("Linear unavailable");
+			},
+		});
+
+		await expect(
+			exportStories(client, {
+				config: defaultConfig,
+				filters: {},
+				outputPath,
+			}),
+		).rejects.toThrow("Linear unavailable");
+
+		expect(readFileSync(outputPath, "utf-8")).toBe("original export");
+	});
+
+	test("rejects returned issues outside the resolved scope without overwriting output", async () => {
+		const outputPath = join(tmpDir, "scope-mismatch.md");
+		await Bun.write(outputPath, "original export");
+		const client = createMockClient({
+			issues: async () => ({
+				nodes: [
+					createMockIssueNode({
+						project: Promise.resolve({ id: "other-project", name: "Other project" }),
+						team: Promise.resolve({ id: "other-team", name: "Other team", key: "OTHER" }),
+					}),
+				],
+				pageInfo: { hasNextPage: false, endCursor: null },
+			}),
+		});
+
+		await expect(
+			exportStories(client, {
+				config: defaultConfig,
+				filters: { project: "Q1 Release" },
+				team: "Engineering",
+				outputPath,
+			}),
+		).rejects.toThrow("ENG-42 is outside the requested team");
+
+		expect(readFileSync(outputPath, "utf-8")).toBe("original export");
+	});
+
+	test("rejects returned issues outside the requested project", async () => {
+		const outputPath = join(tmpDir, "project-mismatch.md");
+		const client = createMockClient({
+			issues: async () => ({
+				nodes: [
+					createMockIssueNode({
+						project: Promise.resolve({ id: "other-project", name: "Other project" }),
+					}),
+				],
+				pageInfo: { hasNextPage: false, endCursor: null },
+			}),
+		});
+
+		await expect(
+			exportStories(client, {
+				config: defaultConfig,
+				filters: { project: "Q1 Release" },
+				team: "Engineering",
+				outputPath,
+			}),
+		).rejects.toThrow("ENG-42 is outside the requested project");
+
+		expect(existsSync(outputPath)).toBe(false);
+	});
+
+	test("rejects returned issues that do not satisfy epic-only validation", async () => {
+		const outputPath = join(tmpDir, "invalid-epic.md");
+		const client = createMockClient({
+			issues: async () => ({
+				nodes: [
+					createMockIssueNode({
+						labels: { nodes: [{ name: "Feature" }] },
+					}),
+				],
+				pageInfo: { hasNextPage: false, endCursor: null },
+			}),
+		});
+
+		await expect(
+			exportStories(client, {
+				config: defaultConfig,
+				filters: { label: "Epic", topLevelOnly: true },
+				team: "Engineering",
+				outputPath,
+			}),
+		).rejects.toThrow('ENG-42 is missing the requested label "Epic"');
+
+		expect(existsSync(outputPath)).toBe(false);
+	});
+
+	test("rejects Epic-labelled child issues from epic-only exports", async () => {
+		const outputPath = join(tmpDir, "child-epic.md");
+		const client = createMockClient({
+			issues: async () => ({
+				nodes: [
+					createMockIssueNode({
+						labels: { nodes: [{ name: "Epic" }] },
+						parent: Promise.resolve({
+							id: "parent-id",
+							identifier: "ENG-1",
+							title: "Parent",
+						}),
+					}),
+				],
+				pageInfo: { hasNextPage: false, endCursor: null },
+			}),
+		});
+
+		await expect(
+			exportStories(client, {
+				config: defaultConfig,
+				filters: { label: "Epic", topLevelOnly: true },
+				team: "Engineering",
+				outputPath,
+			}),
+		).rejects.toThrow("ENG-42 is not a top-level issue");
+
+		expect(existsSync(outputPath)).toBe(false);
 	});
 
 	// =========================================================================
@@ -237,7 +466,7 @@ describe("exportStories", () => {
 
 		const result = await exportStories(client, {
 			config: defaultConfig,
-			filters: { project: "Nonexistent" },
+			filters: {},
 			outputPath,
 		});
 

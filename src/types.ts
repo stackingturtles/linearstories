@@ -69,6 +69,8 @@ export interface ExportFilters {
 	status?: string;
 	assignee?: string;
 	creator?: string;
+	label?: string;
+	topLevelOnly?: boolean;
 }
 
 export interface LinearIssueData {
@@ -77,14 +79,14 @@ export interface LinearIssueData {
 	url: string;
 	title: string;
 	description: string | undefined;
-	priority: number;
+	priority: number | undefined;
 	estimate: number | undefined;
 	state: { name: string } | undefined;
 	assignee: { email: string; displayName: string } | undefined;
 	labels: { nodes: Array<{ name: string }> };
 	parent: { id: string; identifier: string; title: string } | undefined;
-	project: { name: string } | undefined;
-	team: { name: string; key: string };
+	project: { id: string; name: string } | undefined;
+	team: { id: string; name: string; key: string };
 }
 
 export interface ImportResult {

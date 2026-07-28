@@ -285,6 +285,12 @@ epic: ENG-42
 
 This normalization makes exported hierarchy references stable and re-importable.
 
+Use `linearstories export --epics-only` to export only top-level issues with the exact `Epic`
+label. The command applies both label and parent filters in Linear, then validates every returned
+issue against the resolved team, project, label, and parent requirements before writing.
+Resolution, validation, or API failure does not create or replace the destination. Linked fields
+are selected once per issue page, and transient `503` page requests use bounded exponential retry.
+
 ## Complete example
 
 See [`templates/user-story.md`](../templates/user-story.md) for an import-ready file containing an epic and child user stories.

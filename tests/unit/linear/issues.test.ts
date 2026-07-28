@@ -35,8 +35,8 @@ function createMockIssue(overrides: Record<string, unknown> = {}) {
 			displayName: "Jane",
 		}),
 		labels: () => Promise.resolve({ nodes: [{ name: "Feature" }] }),
-		project: Promise.resolve({ name: "Q1 Release" }),
-		team: Promise.resolve({ name: "Engineering", key: "ENG" }),
+		project: Promise.resolve({ id: PROJECT_ID, name: "Q1 Release" }),
+		team: Promise.resolve({ id: TEAM_ID, name: "Engineering", key: "ENG" }),
 		parent: Promise.resolve(undefined),
 		...overrides,
 	};
@@ -44,6 +44,16 @@ function createMockIssue(overrides: Record<string, unknown> = {}) {
 
 function createMockClient(overrides: Record<string, unknown> = {}) {
 	const mockIssue = createMockIssue();
+	const issues = (overrides.issues ??
+		(async () => ({
+			nodes: [],
+			pageInfo: { hasNextPage: false, endCursor: null },
+		}))) as (options: Record<string, unknown>) => Promise<{
+		nodes: Array<Record<string, unknown>>;
+		pageInfo: { hasNextPage: boolean; endCursor: string | null };
+	}>;
+	const { issues: _issues, ...clientOverrides } = overrides;
+
 	return {
 		createIssue: async () => ({
 			success: true,
@@ -53,11 +63,12 @@ function createMockClient(overrides: Record<string, unknown> = {}) {
 			success: true,
 			issue: Promise.resolve(mockIssue),
 		}),
-		issues: async () => ({
-			nodes: [],
-			pageInfo: { hasNextPage: false, endCursor: null },
-		}),
-		...overrides,
+		client: {
+			request: async (_query: string, variables: Record<string, unknown>) => ({
+				issues: await issues(variables),
+			}),
+		},
+		...clientOverrides,
 	} as unknown as LinearClient;
 }
 
@@ -278,8 +289,8 @@ describe("fetchIssues", () => {
 		});
 		expect(results[0].labels).toEqual({ nodes: [{ name: "Feature" }] });
 		expect(results[0].parent).toBeUndefined();
-		expect(results[0].project).toEqual({ name: "Q1 Release" });
-		expect(results[0].team).toEqual({ name: "Engineering", key: "ENG" });
+		expect(results[0].project).toEqual({ id: PROJECT_ID, name: "Q1 Release" });
+		expect(results[0].team).toEqual({ id: TEAM_ID, name: "Engineering", key: "ENG" });
 	});
 
 	test("resolves parent issue data", async () => {
@@ -350,6 +361,103 @@ describe("fetchIssues", () => {
 		expect(issuesFn).toHaveBeenCalledTimes(2);
 	});
 
+	test("fetches linked fields inline with one GraphQL request per page", async () => {
+		const requestFn = mock(async (query: string, variables: Record<string, unknown>) => {
+			expect(query).toContain("state {");
+			expect(query).toContain("assignee {");
+			expect(query).toContain("labels(first: 50)");
+			expect(query).toContain("parent {");
+			expect(query).toMatch(/project\s*{\s*id\s+name/);
+			expect(query).toMatch(/team\s*{\s*id\s+name\s+key/);
+			expect(variables.first).toBe(50);
+
+			return {
+				issues: {
+					nodes: Array.from({ length: 50 }, (_, index) =>
+						createMockIssue({
+							id: `issue-${index}`,
+							identifier: `ENG-${index + 1}`,
+						}),
+					),
+					pageInfo: { hasNextPage: false, endCursor: null },
+				},
+			};
+		});
+		const client = {
+			client: { request: requestFn },
+		} as unknown as LinearClient;
+
+		const results = await fetchIssues(client, {});
+
+		expect(results).toHaveLength(50);
+		expect(requestFn).toHaveBeenCalledTimes(1);
+	});
+
+	test("fetches 494 issues in ten GraphQL page requests", async () => {
+		let page = 0;
+		const requestFn = mock(async () => {
+			const start = page * 50;
+			const count = Math.min(50, 494 - start);
+			page += 1;
+			return {
+				issues: {
+					nodes: Array.from({ length: count }, (_, index) =>
+						createMockIssue({
+							id: `issue-${start + index}`,
+							identifier: `ENG-${start + index + 1}`,
+						}),
+					),
+					pageInfo: {
+						hasNextPage: start + count < 494,
+						endCursor: start + count < 494 ? `cursor-${page}` : null,
+					},
+				},
+			};
+		});
+		const client = {
+			client: { request: requestFn },
+		} as unknown as LinearClient;
+
+		const results = await fetchIssues(client, {});
+
+		expect(results).toHaveLength(494);
+		expect(requestFn).toHaveBeenCalledTimes(10);
+	});
+
+	test("retries a transient 503 page request", async () => {
+		const transientError = Object.assign(new Error("Linear unavailable"), { status: 503 });
+		const requestFn = mock()
+			.mockRejectedValueOnce(transientError)
+			.mockResolvedValueOnce({
+				issues: {
+					nodes: [createMockIssue()],
+					pageInfo: { hasNextPage: false, endCursor: null },
+				},
+			});
+		const client = {
+			client: { request: requestFn },
+		} as unknown as LinearClient;
+
+		const results = await fetchIssues(client, {});
+
+		expect(results).toHaveLength(1);
+		expect(requestFn).toHaveBeenCalledTimes(2);
+	});
+
+	test("stops retrying a transient 503 after three attempts", async () => {
+		const transientError = Object.assign(new Error("Linear unavailable"), { status: 503 });
+		const requestFn = mock(async () => {
+			throw transientError;
+		});
+		const client = {
+			client: { request: requestFn },
+		} as unknown as LinearClient;
+
+		await expect(fetchIssues(client, {})).rejects.toBe(transientError);
+
+		expect(requestFn).toHaveBeenCalledTimes(3);
+	});
+
 	test("returns empty array when no results", async () => {
 		const client = createMockClient({
 			issues: async () => ({
@@ -371,8 +479,8 @@ describe("fetchIssues", () => {
 				displayName: "Bob",
 			}),
 			labels: () => Promise.resolve({ nodes: [{ name: "Bug" }, { name: "Urgent" }] }),
-			project: Promise.resolve({ name: "Hotfix" }),
-			team: Promise.resolve({ name: "Platform", key: "PLT" }),
+			project: Promise.resolve({ id: "hotfix-project", name: "Hotfix" }),
+			team: Promise.resolve({ id: "platform-team", name: "Platform", key: "PLT" }),
 		});
 
 		const client = createMockClient({
@@ -392,8 +500,12 @@ describe("fetchIssues", () => {
 		expect(results[0].labels).toEqual({
 			nodes: [{ name: "Bug" }, { name: "Urgent" }],
 		});
-		expect(results[0].project).toEqual({ name: "Hotfix" });
-		expect(results[0].team).toEqual({ name: "Platform", key: "PLT" });
+		expect(results[0].project).toEqual({ id: "hotfix-project", name: "Hotfix" });
+		expect(results[0].team).toEqual({
+			id: "platform-team",
+			name: "Platform",
+			key: "PLT",
+		});
 	});
 
 	test("handles issues with undefined optional async fields", async () => {
@@ -421,7 +533,7 @@ describe("fetchIssues", () => {
 		expect(results[0].project).toBeUndefined();
 	});
 
-	test("passes filter to client.issues", async () => {
+	test("passes filter to the paginated GraphQL query", async () => {
 		const issuesFn = mock(async (opts: Record<string, unknown>) => {
 			expect(opts.filter).toEqual({
 				project: { id: { eq: PROJECT_ID } },

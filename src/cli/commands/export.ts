@@ -6,6 +6,35 @@ import { createLinearClient } from "../../linear/client.ts";
 import { exportStories } from "../../sync/exporter.ts";
 import type { ExportFilters } from "../../types.ts";
 
+interface ExportCommandOptions {
+	project?: string;
+	issues?: string;
+	status?: string;
+	assignee?: string;
+	creator?: string;
+	label?: string;
+	epicsOnly?: boolean;
+}
+
+export function buildExportFilters(options: ExportCommandOptions): ExportFilters {
+	if (options.label && options.epicsOnly) {
+		throw new ConfigError("--label and --epics-only cannot be used together");
+	}
+
+	const filters: ExportFilters = {};
+	if (options.project) filters.project = options.project;
+	if (options.issues) filters.issues = options.issues.split(",").map((value) => value.trim());
+	if (options.status) filters.status = options.status;
+	if (options.assignee) filters.assignee = options.assignee;
+	if (options.creator) filters.creator = options.creator;
+	if (options.label) filters.label = options.label;
+	if (options.epicsOnly) {
+		filters.label = "Epic";
+		filters.topLevelOnly = true;
+	}
+	return filters;
+}
+
 /**
  * Print a user-friendly error message and exit.
  */
@@ -38,17 +67,13 @@ export function registerExportCommand(program: Command) {
 		.option("-s, --status <state>", "Filter by status")
 		.option("-a, --assignee <email>", "Filter by assignee")
 		.option("--creator <email>", "Filter by creator")
+		.option("-l, --label <name>", "Filter by issue label")
+		.option("--epics-only", "Export only top-level issues labeled Epic")
 		.action(async (options) => {
 			try {
 				const config = await loadConfig({ configPath: options.config, context: options.context });
 				const client = createLinearClient(config.apiKey);
-
-				const filters: ExportFilters = {};
-				if (options.project) filters.project = options.project;
-				if (options.issues) filters.issues = options.issues.split(",").map((s: string) => s.trim());
-				if (options.status) filters.status = options.status;
-				if (options.assignee) filters.assignee = options.assignee;
-				if (options.creator) filters.creator = options.creator;
+				const filters = buildExportFilters(options);
 
 				const result = await exportStories(client, {
 					config,

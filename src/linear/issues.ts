@@ -29,7 +29,7 @@ export interface UpdateIssueResult {
 	identifier: string;
 }
 
-// The Linear SDK's LinearClient has methods like createIssue, updateIssue, issues
+// The Linear SDK's LinearClient has methods like createIssue and updateIssue
 // but the TypeScript types don't always expose them directly. We use this interface
 // to bridge the gap without resorting to `any`.
 interface LinearClientWithMethods {
@@ -44,11 +44,72 @@ interface LinearClientWithMethods {
 		success: boolean;
 		issue: Promise<{ identifier: string }>;
 	}>;
-	issues(opts: Record<string, unknown>): Promise<{
-		nodes: Array<Record<string, unknown>>;
-		pageInfo?: { hasNextPage: boolean; endCursor: string };
-	}>;
 }
+
+interface ExportIssuesResponse {
+	issues: {
+		nodes: Array<Record<string, unknown>>;
+		pageInfo: {
+			hasNextPage: boolean;
+			endCursor: string | null;
+		};
+	};
+}
+
+interface LinearClientWithGraphQL {
+	client: {
+		request(query: string, variables: Record<string, unknown>): Promise<ExportIssuesResponse>;
+	};
+}
+
+const MAX_PAGE_REQUEST_ATTEMPTS = 3;
+const RETRY_BASE_DELAY_MS = 100;
+
+const EXPORT_ISSUES_QUERY = `
+	query ExportIssues($filter: IssueFilter, $first: Int!, $after: String) {
+		issues(filter: $filter, first: $first, after: $after) {
+			nodes {
+				id
+				identifier
+				url
+				title
+				description
+				priority
+				estimate
+				state {
+					name
+				}
+				assignee {
+					email
+					displayName
+				}
+				labels(first: 50) {
+					nodes {
+						name
+					}
+				}
+				parent {
+					id
+					identifier
+					title
+				}
+				project {
+					id
+					name
+				}
+				team {
+					id
+					name
+					key
+				}
+			}
+			pageInfo {
+				hasNextPage
+				endCursor
+			}
+		}
+	}
+`;
 
 /**
  * Create a new Linear issue from the given input.
@@ -154,28 +215,61 @@ export async function fetchIssues(
 	let cursor: string | undefined;
 
 	do {
-		const opts: Record<string, unknown> = { filter, first: 50 };
+		const variables: Record<string, unknown> = { filter, first: 50 };
 		if (cursor) {
-			opts.after = cursor;
+			variables.after = cursor;
 		}
 
-		const typedClient = client as unknown as LinearClientWithMethods;
-		const response = await typedClient.issues(opts);
-		const nodes = response.nodes ?? [];
+		const response = await requestIssuePage(client, variables);
+		const nodes = response.issues.nodes ?? [];
+		allIssues.push(...(await Promise.all(nodes.map(resolveIssueFields))));
 
-		for (const node of nodes) {
-			const resolved = await resolveIssueFields(node);
-			allIssues.push(resolved);
-		}
-
-		if (response.pageInfo?.hasNextPage) {
-			cursor = response.pageInfo.endCursor;
+		if (response.issues.pageInfo.hasNextPage) {
+			const endCursor = response.issues.pageInfo.endCursor;
+			if (!endCursor) {
+				throw new LinearApiError("Linear returned another issue page without an end cursor");
+			}
+			cursor = endCursor;
 		} else {
 			cursor = undefined;
 		}
 	} while (cursor);
 
 	return allIssues;
+}
+
+async function requestIssuePage(
+	client: LinearClient,
+	variables: Record<string, unknown>,
+): Promise<ExportIssuesResponse> {
+	const typedClient = client as unknown as LinearClientWithGraphQL;
+	let attempt = 1;
+
+	while (true) {
+		try {
+			return await typedClient.client.request(EXPORT_ISSUES_QUERY, variables);
+		} catch (error) {
+			if (getErrorStatus(error) !== 503 || attempt === MAX_PAGE_REQUEST_ATTEMPTS) {
+				throw error;
+			}
+			await Bun.sleep(RETRY_BASE_DELAY_MS * 2 ** (attempt - 1));
+			attempt += 1;
+		}
+	}
+}
+
+function getErrorStatus(error: unknown): number | undefined {
+	if (typeof error !== "object" || error === null) {
+		return undefined;
+	}
+
+	const candidate = error as {
+		status?: unknown;
+		response?: { status?: unknown };
+		raw?: { response?: { status?: unknown } };
+	};
+	const statuses = [candidate.status, candidate.response?.status, candidate.raw?.response?.status];
+	return statuses.find((status): status is number => typeof status === "number");
 }
 
 /**
@@ -201,11 +295,11 @@ async function resolveIssueFields(node: Record<string, unknown>): Promise<Linear
 		description: node.description as string | undefined,
 		priority: node.priority as number | undefined,
 		estimate: node.estimate as number | undefined,
-		state: (state as Record<string, unknown>) ?? undefined,
-		assignee: (assignee as Record<string, unknown>) ?? undefined,
-		labels: (labels as { nodes: Array<Record<string, unknown>> }) ?? { nodes: [] },
-		parent: (parent as { id: string; identifier: string; title: string }) ?? undefined,
-		project: (project as Record<string, unknown>) ?? undefined,
-		team: team as Record<string, unknown>,
+		state: (state as LinearIssueData["state"]) ?? undefined,
+		assignee: (assignee as LinearIssueData["assignee"]) ?? undefined,
+		labels: (labels as LinearIssueData["labels"]) ?? { nodes: [] },
+		parent: (parent as LinearIssueData["parent"]) ?? undefined,
+		project: (project as LinearIssueData["project"]) ?? undefined,
+		team: team as LinearIssueData["team"],
 	};
 }
