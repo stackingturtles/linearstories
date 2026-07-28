@@ -44,6 +44,16 @@ function createMockIssue(overrides: Record<string, unknown> = {}) {
 
 function createMockClient(overrides: Record<string, unknown> = {}) {
 	const mockIssue = createMockIssue();
+	const issues = (overrides.issues ??
+		(async () => ({
+			nodes: [],
+			pageInfo: { hasNextPage: false, endCursor: null },
+		}))) as (options: Record<string, unknown>) => Promise<{
+		nodes: Array<Record<string, unknown>>;
+		pageInfo: { hasNextPage: boolean; endCursor: string | null };
+	}>;
+	const { issues: _issues, ...clientOverrides } = overrides;
+
 	return {
 		createIssue: async () => ({
 			success: true,
@@ -53,11 +63,12 @@ function createMockClient(overrides: Record<string, unknown> = {}) {
 			success: true,
 			issue: Promise.resolve(mockIssue),
 		}),
-		issues: async () => ({
-			nodes: [],
-			pageInfo: { hasNextPage: false, endCursor: null },
-		}),
-		...overrides,
+		client: {
+			request: async (_query: string, variables: Record<string, unknown>) => ({
+				issues: await issues(variables),
+			}),
+		},
+		...clientOverrides,
 	} as unknown as LinearClient;
 }
 
@@ -350,6 +361,69 @@ describe("fetchIssues", () => {
 		expect(issuesFn).toHaveBeenCalledTimes(2);
 	});
 
+	test("fetches linked fields inline with one GraphQL request per page", async () => {
+		const requestFn = mock(async (query: string, variables: Record<string, unknown>) => {
+			expect(query).toContain("state {");
+			expect(query).toContain("assignee {");
+			expect(query).toContain("labels(first: 50)");
+			expect(query).toContain("parent {");
+			expect(query).toContain("project {");
+			expect(query).toContain("team {");
+			expect(variables.first).toBe(50);
+
+			return {
+				issues: {
+					nodes: Array.from({ length: 50 }, (_, index) =>
+						createMockIssue({
+							id: `issue-${index}`,
+							identifier: `ENG-${index + 1}`,
+						}),
+					),
+					pageInfo: { hasNextPage: false, endCursor: null },
+				},
+			};
+		});
+		const client = {
+			client: { request: requestFn },
+		} as unknown as LinearClient;
+
+		const results = await fetchIssues(client, {});
+
+		expect(results).toHaveLength(50);
+		expect(requestFn).toHaveBeenCalledTimes(1);
+	});
+
+	test("fetches 494 issues in ten GraphQL page requests", async () => {
+		let page = 0;
+		const requestFn = mock(async () => {
+			const start = page * 50;
+			const count = Math.min(50, 494 - start);
+			page += 1;
+			return {
+				issues: {
+					nodes: Array.from({ length: count }, (_, index) =>
+						createMockIssue({
+							id: `issue-${start + index}`,
+							identifier: `ENG-${start + index + 1}`,
+						}),
+					),
+					pageInfo: {
+						hasNextPage: start + count < 494,
+						endCursor: start + count < 494 ? `cursor-${page}` : null,
+					},
+				},
+			};
+		});
+		const client = {
+			client: { request: requestFn },
+		} as unknown as LinearClient;
+
+		const results = await fetchIssues(client, {});
+
+		expect(results).toHaveLength(494);
+		expect(requestFn).toHaveBeenCalledTimes(10);
+	});
+
 	test("returns empty array when no results", async () => {
 		const client = createMockClient({
 			issues: async () => ({
@@ -421,7 +495,7 @@ describe("fetchIssues", () => {
 		expect(results[0].project).toBeUndefined();
 	});
 
-	test("passes filter to client.issues", async () => {
+	test("passes filter to the paginated GraphQL query", async () => {
 		const issuesFn = mock(async (opts: Record<string, unknown>) => {
 			expect(opts.filter).toEqual({
 				project: { id: { eq: PROJECT_ID } },

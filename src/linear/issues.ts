@@ -29,7 +29,7 @@ export interface UpdateIssueResult {
 	identifier: string;
 }
 
-// The Linear SDK's LinearClient has methods like createIssue, updateIssue, issues
+// The Linear SDK's LinearClient has methods like createIssue and updateIssue
 // but the TypeScript types don't always expose them directly. We use this interface
 // to bridge the gap without resorting to `any`.
 interface LinearClientWithMethods {
@@ -44,11 +44,67 @@ interface LinearClientWithMethods {
 		success: boolean;
 		issue: Promise<{ identifier: string }>;
 	}>;
-	issues(opts: Record<string, unknown>): Promise<{
-		nodes: Array<Record<string, unknown>>;
-		pageInfo?: { hasNextPage: boolean; endCursor: string };
-	}>;
 }
+
+interface ExportIssuesResponse {
+	issues: {
+		nodes: Array<Record<string, unknown>>;
+		pageInfo: {
+			hasNextPage: boolean;
+			endCursor: string | null;
+		};
+	};
+}
+
+interface LinearClientWithGraphQL {
+	client: {
+		request(query: string, variables: Record<string, unknown>): Promise<ExportIssuesResponse>;
+	};
+}
+
+const EXPORT_ISSUES_QUERY = `
+	query ExportIssues($filter: IssueFilter, $first: Int!, $after: String) {
+		issues(filter: $filter, first: $first, after: $after) {
+			nodes {
+				id
+				identifier
+				url
+				title
+				description
+				priority
+				estimate
+				state {
+					name
+				}
+				assignee {
+					email
+					displayName
+				}
+				labels(first: 50) {
+					nodes {
+						name
+					}
+				}
+				parent {
+					id
+					identifier
+					title
+				}
+				project {
+					name
+				}
+				team {
+					name
+					key
+				}
+			}
+			pageInfo {
+				hasNextPage
+				endCursor
+			}
+		}
+	}
+`;
 
 /**
  * Create a new Linear issue from the given input.
@@ -154,22 +210,22 @@ export async function fetchIssues(
 	let cursor: string | undefined;
 
 	do {
-		const opts: Record<string, unknown> = { filter, first: 50 };
+		const variables: Record<string, unknown> = { filter, first: 50 };
 		if (cursor) {
-			opts.after = cursor;
+			variables.after = cursor;
 		}
 
-		const typedClient = client as unknown as LinearClientWithMethods;
-		const response = await typedClient.issues(opts);
-		const nodes = response.nodes ?? [];
+		const typedClient = client as unknown as LinearClientWithGraphQL;
+		const response = await typedClient.client.request(EXPORT_ISSUES_QUERY, variables);
+		const nodes = response.issues.nodes ?? [];
+		allIssues.push(...(await Promise.all(nodes.map(resolveIssueFields))));
 
-		for (const node of nodes) {
-			const resolved = await resolveIssueFields(node);
-			allIssues.push(resolved);
-		}
-
-		if (response.pageInfo?.hasNextPage) {
-			cursor = response.pageInfo.endCursor;
+		if (response.issues.pageInfo.hasNextPage) {
+			const endCursor = response.issues.pageInfo.endCursor;
+			if (!endCursor) {
+				throw new LinearApiError("Linear returned another issue page without an end cursor");
+			}
+			cursor = endCursor;
 		} else {
 			cursor = undefined;
 		}

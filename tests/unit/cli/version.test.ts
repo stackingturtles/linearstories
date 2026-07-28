@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import packageJson from "../../../package.json" with { type: "json" };
+import { buildExportFilters } from "../../../src/cli/commands/export.ts";
 import { formatVisualizationSummary } from "../../../src/cli/commands/visualize.ts";
 import type { ProjectGraph } from "../../../src/visualization/graph.ts";
 
@@ -37,6 +38,24 @@ test("visualize help exposes the local server options", () => {
 	expect(output).toContain("<file>");
 	expect(output).toContain("--port <port>");
 	expect(output).toContain("--no-open");
+});
+
+test("export help exposes label and epic-only filters", () => {
+	const result = Bun.spawnSync(["bun", "run", "src/cli/index.ts", "export", "--help"], {
+		cwd: new URL("../../..", import.meta.url).pathname,
+	});
+	const output = result.stdout.toString();
+
+	expect(result.exitCode).toBe(0);
+	expect(output).toContain("--label <name>");
+	expect(output).toContain("--epics-only");
+});
+
+test("epics-only maps to the exact Epic label and conflicts with label", () => {
+	expect(buildExportFilters({ epicsOnly: true })).toEqual({ label: "Epic" });
+	expect(() => buildExportFilters({ epicsOnly: true, label: "Feature" })).toThrow(
+		"--label and --epics-only cannot be used together",
+	);
 });
 
 test("CLI help exposes context setup and listing commands", () => {

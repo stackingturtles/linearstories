@@ -6,7 +6,7 @@ Canonical repository: https://github.com/stackingturtles/linearstories
 Human documentation: https://github.com/stackingturtles/linearstories/blob/main/README.md
 Markdown format: https://github.com/stackingturtles/linearstories/blob/main/docs/USER_STORY_FORMAT.md
 Releases: https://github.com/stackingturtles/linearstories/releases
-Current documented version: 1.5.0
+Current documented version: 1.6.0
 
 ## Core model
 
@@ -344,8 +344,29 @@ Useful export filters:
 -s, --status <state>
 -a, --assignee <email>
 --creator <email>
+-l, --label <name>
+--epics-only
 -o, --output <file>
 ```
+
+Export only epics in a team and project:
+
+```bash
+linearstories export \
+  --team "Engineering" \
+  --project "Q1 Release" \
+  --epics-only \
+  --output stories/epics.md
+```
+
+`--epics-only` is shorthand for the exact `Epic` label and cannot be combined with `--label`.
+Project filters require a team supplied by `--team` or `defaultTeam`. Team and project names are
+resolved before issue fetching; resolution failure exits nonzero without an unscoped query and
+without creating or overwriting the output file. API failures also leave the output untouched.
+
+Export relationships are selected inline in one GraphQL request per issue page. Do not
+post-process a workspace-wide export to find epics; use `--epics-only` so Linear applies the
+project, team, and label filters server-side.
 
 Exported epics retain the exact `Epic` label. Exported child issues use the stable parent identifier as `epic` metadata.
 

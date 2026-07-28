@@ -1,4 +1,5 @@
 import type { LinearClient } from "@linear/sdk";
+import { ResolverError } from "../errors.ts";
 import { buildIssueFilter, type IssueFilterInput } from "../linear/filters.ts";
 import { fetchIssues } from "../linear/issues.ts";
 import { Resolver } from "../linear/resolvers.ts";
@@ -76,16 +77,20 @@ async function buildFilterInput(
 	team?: string,
 ): Promise<IssueFilterInput> {
 	const input: IssueFilterInput = {};
+	let teamId: string | undefined;
 
-	if (filters.project && team) {
-		try {
-			const teamId = await resolver.resolveTeamId(team);
-			const projectId = await resolver.resolveProjectId(filters.project, teamId);
-			input.projectId = projectId;
-		} catch {
-			// If resolution fails, try filtering by project name as-is
-			// (the API may accept it)
+	if (team) {
+		teamId = await resolver.resolveTeamId(team);
+		input.teamId = teamId;
+	}
+
+	if (filters.project) {
+		if (!team || !teamId) {
+			throw new ResolverError(
+				`Project "${filters.project}" cannot be resolved without a team. Set --team or defaultTeam.`,
+			);
 		}
+		input.projectId = await resolver.resolveProjectId(filters.project, teamId);
 	}
 
 	if (filters.issues && filters.issues.length > 0) {
@@ -102,6 +107,10 @@ async function buildFilterInput(
 
 	if (filters.creator) {
 		input.creatorEmail = filters.creator;
+	}
+
+	if (filters.label) {
+		input.labelName = filters.label;
 	}
 
 	return input;

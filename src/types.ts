@@ -69,6 +69,7 @@ export interface ExportFilters {
 	status?: string;
 	assignee?: string;
 	creator?: string;
+	label?: string;
 }
 
 export interface LinearIssueData {

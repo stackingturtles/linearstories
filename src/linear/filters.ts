@@ -1,9 +1,11 @@
 export interface IssueFilterInput {
 	projectId?: string;
+	teamId?: string;
 	identifiers?: string[];
 	statusName?: string;
 	assigneeEmail?: string;
 	creatorEmail?: string;
+	labelName?: string;
 }
 
 /**
@@ -16,6 +18,11 @@ export function buildIssueFilter(input: IssueFilterInput): Record<string, unknow
 
 	if (input.projectId) {
 		filter.project = { id: { eq: input.projectId } };
+	}
+
+	const teamFilter: Record<string, unknown> = {};
+	if (input.teamId) {
+		teamFilter.id = { eq: input.teamId };
 	}
 
 	if (input.identifiers && input.identifiers.length > 0) {
@@ -36,8 +43,12 @@ export function buildIssueFilter(input: IssueFilterInput): Record<string, unknow
 			filter.number = { in: numbers };
 		}
 		if (teamKeys.size === 1) {
-			filter.team = { key: { eq: [...teamKeys][0] } };
+			teamFilter.key = { eq: [...teamKeys][0] };
 		}
+	}
+
+	if (Object.keys(teamFilter).length > 0) {
+		filter.team = teamFilter;
 	}
 
 	if (input.statusName) {
@@ -50,6 +61,10 @@ export function buildIssueFilter(input: IssueFilterInput): Record<string, unknow
 
 	if (input.creatorEmail) {
 		filter.creator = { email: { eq: input.creatorEmail } };
+	}
+
+	if (input.labelName) {
+		filter.labels = { name: { eq: input.labelName } };
 	}
 
 	return filter;

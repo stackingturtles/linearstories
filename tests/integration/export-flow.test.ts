@@ -39,10 +39,14 @@ function createExportMockClient(issues: any[]) {
 		issueLabels: async () => ({ nodes: [] }),
 		users: async () => ({ nodes: [] }),
 		workflowStates: async () => ({ nodes: [] }),
-		issues: async () => ({
-			nodes: issues,
-			pageInfo: { hasNextPage: false, endCursor: null },
-		}),
+		client: {
+			request: async () => ({
+				issues: {
+					nodes: issues,
+					pageInfo: { hasNextPage: false, endCursor: null },
+				},
+			}),
+		},
 	} as unknown as LinearClient;
 }
 

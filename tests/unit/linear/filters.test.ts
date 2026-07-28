@@ -11,6 +11,17 @@ describe("buildIssueFilter", () => {
 		});
 	});
 
+	test("with team and label", () => {
+		const filter = buildIssueFilter({
+			teamId: "team-uuid",
+			labelName: "Epic",
+		});
+		expect(filter).toEqual({
+			team: { id: { eq: "team-uuid" } },
+			labels: { name: { eq: "Epic" } },
+		});
+	});
+
 	test("with issue identifiers", () => {
 		const filter = buildIssueFilter({
 			identifiers: ["ENG-42", "ENG-43"],
@@ -64,19 +75,22 @@ describe("buildIssueFilter", () => {
 	test("combines all filters together", () => {
 		const filter = buildIssueFilter({
 			projectId: PROJECT_ID,
+			teamId: "team-uuid",
 			identifiers: ["ENG-42"],
 			statusName: "Todo",
 			assigneeEmail: "jane@co.com",
 			creatorEmail: "bob@co.com",
+			labelName: "Epic",
 		});
 
 		expect(filter).toEqual({
 			project: { id: { eq: PROJECT_ID } },
 			number: { in: [42] },
-			team: { key: { eq: "ENG" } },
+			team: { id: { eq: "team-uuid" }, key: { eq: "ENG" } },
 			state: { name: { eqIgnoreCase: "Todo" } },
 			assignee: { email: { eq: "jane@co.com" } },
 			creator: { email: { eq: "bob@co.com" } },
+			labels: { name: { eq: "Epic" } },
 		});
 	});
 });

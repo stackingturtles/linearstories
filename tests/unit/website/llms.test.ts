@@ -20,4 +20,8 @@ test("llms.txt documents the agent-safe CLI workflow", () => {
 	expect(content).toContain("linearstories deletectx <name>");
 	expect(content).toContain("linearstories contexts");
 	expect(content).toContain("never includes the token itself");
+	expect(content).toContain("--epics-only");
+	expect(content).toContain("--label <name>");
+	expect(content).toContain("without an unscoped query");
+	expect(content).toContain("one GraphQL request per issue page");
 });

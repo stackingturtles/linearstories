@@ -561,6 +561,8 @@ linearstories export [options]
 | `-s, --status <state>`     | Filter by workflow status                               |                         |
 | `-a, --assignee <email>`   | Filter by assignee email                                |                         |
 | `--creator <email>`        | Filter by creator email                                 |                         |
+| `-l, --label <name>`       | Filter by exact issue label                             |                         |
+| `--epics-only`             | Export only issues with the exact `Epic` label          |                         |
 
 **Examples:**
 
@@ -573,6 +575,12 @@ linearstories export -o backlog.md
 
 # Export only issues in a specific project
 linearstories export -t "Engineering" -p "Q1 2026 Release"
+
+# Export only epics in a specific project
+linearstories export -t "Engineering" -p "Q1 2026 Release" --epics-only
+
+# Export issues carrying another label
+linearstories export -t "Engineering" --label "Feature"
 
 # Export specific issues by ID
 linearstories export -i ENG-1,ENG-2,ENG-3
@@ -589,6 +597,11 @@ linearstories export --creator alex@company.com
 # Combine filters
 linearstories export -t "Engineering" -p "Q1 2026 Release" -s "Todo" -o sprint-todo.md
 ```
+
+`--epics-only` and `--label` are mutually exclusive. Team and project names are resolved before
+issues are queried. A project filter requires a team from `--team` or `defaultTeam`; if either
+scope cannot be resolved, the command exits nonzero without querying unscoped issues or creating
+or overwriting the output file.
 
 ## Import workflow
 
@@ -749,6 +762,12 @@ This fetches all issues from the Engineering team and writes them to `stories/ex
 
 ### Filtering examples
 
+Export only epics for a project:
+
+```bash
+linearstories export -t "Engineering" -p "Q1 2026 Release" --epics-only -o epics.md
+```
+
 Export only backlog items for a specific project:
 
 ```bash
@@ -766,6 +785,11 @@ Export everything assigned to one person:
 ```bash
 linearstories export -a jane@company.com -o janes-stories.md
 ```
+
+Export filters are applied by Linear. Team and project resolution fails closed before the issue
+query begins, so a misspelled or inaccessible scope cannot degrade into a workspace-wide export.
+Each issue page selects state, assignee, labels, parent, project, and team in one GraphQL request
+instead of resolving those relationships separately for every issue.
 
 ### Round-trip workflow
 
