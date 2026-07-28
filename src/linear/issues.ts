@@ -62,6 +62,9 @@ interface LinearClientWithGraphQL {
 	};
 }
 
+const MAX_PAGE_REQUEST_ATTEMPTS = 3;
+const RETRY_BASE_DELAY_MS = 100;
+
 const EXPORT_ISSUES_QUERY = `
 	query ExportIssues($filter: IssueFilter, $first: Int!, $after: String) {
 		issues(filter: $filter, first: $first, after: $after) {
@@ -91,9 +94,11 @@ const EXPORT_ISSUES_QUERY = `
 					title
 				}
 				project {
+					id
 					name
 				}
 				team {
+					id
 					name
 					key
 				}
@@ -215,8 +220,7 @@ export async function fetchIssues(
 			variables.after = cursor;
 		}
 
-		const typedClient = client as unknown as LinearClientWithGraphQL;
-		const response = await typedClient.client.request(EXPORT_ISSUES_QUERY, variables);
+		const response = await requestIssuePage(client, variables);
 		const nodes = response.issues.nodes ?? [];
 		allIssues.push(...(await Promise.all(nodes.map(resolveIssueFields))));
 
@@ -232,6 +236,40 @@ export async function fetchIssues(
 	} while (cursor);
 
 	return allIssues;
+}
+
+async function requestIssuePage(
+	client: LinearClient,
+	variables: Record<string, unknown>,
+): Promise<ExportIssuesResponse> {
+	const typedClient = client as unknown as LinearClientWithGraphQL;
+	let attempt = 1;
+
+	while (true) {
+		try {
+			return await typedClient.client.request(EXPORT_ISSUES_QUERY, variables);
+		} catch (error) {
+			if (getErrorStatus(error) !== 503 || attempt === MAX_PAGE_REQUEST_ATTEMPTS) {
+				throw error;
+			}
+			await Bun.sleep(RETRY_BASE_DELAY_MS * 2 ** (attempt - 1));
+			attempt += 1;
+		}
+	}
+}
+
+function getErrorStatus(error: unknown): number | undefined {
+	if (typeof error !== "object" || error === null) {
+		return undefined;
+	}
+
+	const candidate = error as {
+		status?: unknown;
+		response?: { status?: unknown };
+		raw?: { response?: { status?: unknown } };
+	};
+	const statuses = [candidate.status, candidate.response?.status, candidate.raw?.response?.status];
+	return statuses.find((status): status is number => typeof status === "number");
 }
 
 /**
@@ -257,11 +295,11 @@ async function resolveIssueFields(node: Record<string, unknown>): Promise<Linear
 		description: node.description as string | undefined,
 		priority: node.priority as number | undefined,
 		estimate: node.estimate as number | undefined,
-		state: (state as Record<string, unknown>) ?? undefined,
-		assignee: (assignee as Record<string, unknown>) ?? undefined,
-		labels: (labels as { nodes: Array<Record<string, unknown>> }) ?? { nodes: [] },
-		parent: (parent as { id: string; identifier: string; title: string }) ?? undefined,
-		project: (project as Record<string, unknown>) ?? undefined,
-		team: team as Record<string, unknown>,
+		state: (state as LinearIssueData["state"]) ?? undefined,
+		assignee: (assignee as LinearIssueData["assignee"]) ?? undefined,
+		labels: (labels as LinearIssueData["labels"]) ?? { nodes: [] },
+		parent: (parent as LinearIssueData["parent"]) ?? undefined,
+		project: (project as LinearIssueData["project"]) ?? undefined,
+		team: team as LinearIssueData["team"],
 	};
 }

@@ -1,5 +1,5 @@
 import type { LinearClient } from "@linear/sdk";
-import { ResolverError } from "../errors.ts";
+import { LinearApiError, ResolverError } from "../errors.ts";
 import { buildIssueFilter, type IssueFilterInput } from "../linear/filters.ts";
 import { fetchIssues } from "../linear/issues.ts";
 import { Resolver } from "../linear/resolvers.ts";
@@ -42,19 +42,13 @@ export async function exportStories(
 
 	// 2. Fetch issues from Linear
 	const issues = await fetchIssues(client, filter);
+	validateIssueScope(issues, filterInput);
 
 	// 3. Convert to UserStory[]
 	const stories = issues.map(issueToUserStory);
 
 	// 4. Build optional frontmatter
-	const frontmatter: FileFrontmatter = {};
-	if (options.team) {
-		frontmatter.team = options.team;
-	}
-	// If all stories share the same project, include it in frontmatter
-	if (options.filters.project) {
-		frontmatter.project = options.filters.project;
-	}
+	const frontmatter = buildFrontmatter(options, issues);
 
 	// 5. Serialize and write
 	const markdown = serializeStories(stories, frontmatter);
@@ -113,7 +107,47 @@ async function buildFilterInput(
 		input.labelName = filters.label;
 	}
 
+	if (filters.topLevelOnly) {
+		input.topLevelOnly = true;
+	}
+
 	return input;
+}
+
+function validateIssueScope(issues: LinearIssueData[], filter: IssueFilterInput): void {
+	for (const issue of issues) {
+		if (filter.teamId && issue.team.id !== filter.teamId) {
+			throw new LinearApiError(`${issue.identifier} is outside the requested team`);
+		}
+
+		if (filter.projectId && issue.project?.id !== filter.projectId) {
+			throw new LinearApiError(`${issue.identifier} is outside the requested project`);
+		}
+
+		if (filter.labelName && !issue.labels.nodes.some((label) => label.name === filter.labelName)) {
+			throw new LinearApiError(
+				`${issue.identifier} is missing the requested label "${filter.labelName}"`,
+			);
+		}
+
+		if (filter.topLevelOnly && issue.parent) {
+			throw new LinearApiError(`${issue.identifier} is not a top-level issue`);
+		}
+	}
+}
+
+function buildFrontmatter(options: ExportOptions, issues: LinearIssueData[]): FileFrontmatter {
+	const firstIssue = issues[0];
+	const frontmatter: FileFrontmatter = {};
+
+	if (options.team) {
+		frontmatter.team = firstIssue?.team.name ?? options.team;
+	}
+	if (options.filters.project) {
+		frontmatter.project = firstIssue?.project?.name ?? options.filters.project;
+	}
+
+	return frontmatter;
 }
 
 /**

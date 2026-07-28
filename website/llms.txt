@@ -359,14 +359,17 @@ linearstories export \
   --output stories/epics.md
 ```
 
-`--epics-only` is shorthand for the exact `Epic` label and cannot be combined with `--label`.
-Project filters require a team supplied by `--team` or `defaultTeam`. Team and project names are
-resolved before issue fetching; resolution failure exits nonzero without an unscoped query and
-without creating or overwriting the output file. API failures also leave the output untouched.
+`--epics-only` requires both the exact `Epic` label and no parent issue, and cannot be combined
+with `--label`. Project filters require a team supplied by `--team` or `defaultTeam`. Team and
+project names are resolved before issue fetching; resolution failure exits nonzero without an unscoped query
+and without creating or overwriting the output file. Returned issues are checked against the resolved
+team, project, label, and top-level requirements before writing. API failures also leave the output
+untouched.
 
-Export relationships are selected inline in one GraphQL request per issue page. Do not
-post-process a workspace-wide export to find epics; use `--epics-only` so Linear applies the
-project, team, and label filters server-side.
+Export relationships are selected inline in one GraphQL request per issue page. Transient `503`
+page failures use at most three attempts with exponential delay. Do not post-process a
+workspace-wide export to find epics; use `--epics-only` so Linear applies the project, team,
+label, and parent filters server-side.
 
 Exported epics retain the exact `Epic` label. Exported child issues use the stable parent identifier as `epic` metadata.
 

@@ -28,7 +28,10 @@ export function buildExportFilters(options: ExportCommandOptions): ExportFilters
 	if (options.assignee) filters.assignee = options.assignee;
 	if (options.creator) filters.creator = options.creator;
 	if (options.label) filters.label = options.label;
-	if (options.epicsOnly) filters.label = "Epic";
+	if (options.epicsOnly) {
+		filters.label = "Epic";
+		filters.topLevelOnly = true;
+	}
 	return filters;
 }
 
@@ -65,7 +68,7 @@ export function registerExportCommand(program: Command) {
 		.option("-a, --assignee <email>", "Filter by assignee")
 		.option("--creator <email>", "Filter by creator")
 		.option("-l, --label <name>", "Filter by issue label")
-		.option("--epics-only", "Export only issues labeled Epic")
+		.option("--epics-only", "Export only top-level issues labeled Epic")
 		.action(async (options) => {
 			try {
 				const config = await loadConfig({ configPath: options.config, context: options.context });

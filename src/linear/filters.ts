@@ -6,6 +6,7 @@ export interface IssueFilterInput {
 	assigneeEmail?: string;
 	creatorEmail?: string;
 	labelName?: string;
+	topLevelOnly?: boolean;
 }
 
 /**
@@ -34,8 +35,12 @@ export function buildIssueFilter(input: IssueFilterInput): Record<string, unknow
 		for (const id of input.identifiers) {
 			const match = id.match(/^([A-Za-z]+)-(\d+)$/);
 			if (match) {
-				teamKeys.add(match[1].toUpperCase());
-				numbers.push(Number.parseInt(match[2], 10));
+				const [, rawTeamKey, rawNumber] = match;
+				if (!rawTeamKey || !rawNumber) {
+					continue;
+				}
+				teamKeys.add(rawTeamKey.toUpperCase());
+				numbers.push(Number.parseInt(rawNumber, 10));
 			}
 		}
 
@@ -65,6 +70,10 @@ export function buildIssueFilter(input: IssueFilterInput): Record<string, unknow
 
 	if (input.labelName) {
 		filter.labels = { name: { eq: input.labelName } };
+	}
+
+	if (input.topLevelOnly) {
+		filter.parent = { null: true };
 	}
 
 	return filter;

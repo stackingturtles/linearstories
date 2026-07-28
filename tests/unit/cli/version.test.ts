@@ -52,7 +52,10 @@ test("export help exposes label and epic-only filters", () => {
 });
 
 test("epics-only maps to the exact Epic label and conflicts with label", () => {
-	expect(buildExportFilters({ epicsOnly: true })).toEqual({ label: "Epic" });
+	expect(buildExportFilters({ epicsOnly: true })).toEqual({
+		label: "Epic",
+		topLevelOnly: true,
+	});
 	expect(() => buildExportFilters({ epicsOnly: true, label: "Feature" })).toThrow(
 		"--label and --epics-only cannot be used together",
 	);

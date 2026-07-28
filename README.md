@@ -562,7 +562,7 @@ linearstories export [options]
 | `-a, --assignee <email>`   | Filter by assignee email                                |                         |
 | `--creator <email>`        | Filter by creator email                                 |                         |
 | `-l, --label <name>`       | Filter by exact issue label                             |                         |
-| `--epics-only`             | Export only issues with the exact `Epic` label          |                         |
+| `--epics-only`             | Export top-level issues with the exact `Epic` label     |                         |
 
 **Examples:**
 
@@ -598,10 +598,11 @@ linearstories export --creator alex@company.com
 linearstories export -t "Engineering" -p "Q1 2026 Release" -s "Todo" -o sprint-todo.md
 ```
 
-`--epics-only` and `--label` are mutually exclusive. Team and project names are resolved before
-issues are queried. A project filter requires a team from `--team` or `defaultTeam`; if either
-scope cannot be resolved, the command exits nonzero without querying unscoped issues or creating
-or overwriting the output file.
+`--epics-only` and `--label` are mutually exclusive. Epic-only exports require both the exact
+`Epic` label and no parent issue. Team and project names are resolved before issues are queried.
+A project filter requires a team from `--team` or `defaultTeam`; if either scope cannot be
+resolved, the command exits nonzero without querying unscoped issues or creating or overwriting
+the output file.
 
 ## Import workflow
 
@@ -788,8 +789,10 @@ linearstories export -a jane@company.com -o janes-stories.md
 
 Export filters are applied by Linear. Team and project resolution fails closed before the issue
 query begins, so a misspelled or inaccessible scope cannot degrade into a workspace-wide export.
-Each issue page selects state, assignee, labels, parent, project, and team in one GraphQL request
-instead of resolving those relationships separately for every issue.
+Returned issues are validated against the resolved team, project, label, and top-level
+requirements before the destination is written. Each issue page selects state, assignee, labels,
+parent, project, and team in one GraphQL request instead of resolving those relationships
+separately for every issue. Transient `503` page requests use bounded exponential retry.
 
 ### Round-trip workflow
 

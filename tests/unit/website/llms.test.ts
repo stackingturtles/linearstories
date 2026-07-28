@@ -24,4 +24,6 @@ test("llms.txt documents the agent-safe CLI workflow", () => {
 	expect(content).toContain("--label <name>");
 	expect(content).toContain("without an unscoped query");
 	expect(content).toContain("one GraphQL request per issue page");
+	expect(content).toContain("exact `Epic` label and no parent issue");
+	expect(content).toContain("at most three attempts");
 });

@@ -69,8 +69,8 @@ function createMockExportIssue(overrides: Record<string, unknown> = {}) {
 			displayName: "Jane",
 		}),
 		labels: () => Promise.resolve({ nodes: [{ name: "Feature" }] }),
-		project: Promise.resolve({ name: "Q1 Release" }),
-		team: Promise.resolve({ name: "Engineering", key: "ENG" }),
+		project: Promise.resolve({ id: "project-uuid", name: "Q1 Release" }),
+		team: Promise.resolve({ id: "team-uuid", name: "Engineering", key: "ENG" }),
 		...overrides,
 	};
 }

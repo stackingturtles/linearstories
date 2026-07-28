@@ -41,8 +41,8 @@ function createMockIssueNode(overrides: Record<string, unknown> = {}) {
 		state: Promise.resolve({ name: "Backlog" }),
 		assignee: Promise.resolve({ email: "jane@co.com", displayName: "Jane" }),
 		labels: () => Promise.resolve({ nodes: [{ name: "Feature" }] }),
-		project: Promise.resolve({ name: "Q1 Release" }),
-		team: Promise.resolve({ name: "Engineering", key: "ENG" }),
+		project: Promise.resolve({ id: PROJECT_UUID, name: "Q1 Release" }),
+		team: Promise.resolve({ id: TEAM_UUID, name: "Engineering", key: "ENG" }),
 		parent: Promise.resolve(undefined),
 		...overrides,
 	};
@@ -135,11 +135,12 @@ describe("exportStories", () => {
 		expect(result.count).toBe(1);
 	});
 
-	test("applies label and team filters together", async () => {
+	test("applies top-level Epic and team filters together", async () => {
 		const issuesFn = mock(async (opts: Record<string, unknown>) => {
 			expect(opts.filter).toEqual({
 				team: { id: { eq: TEAM_UUID } },
 				labels: { name: { eq: "Epic" } },
+				parent: { null: true },
 			});
 			return {
 				nodes: [createMockIssueNode({ labels: { nodes: [{ name: "Epic" }] } })],
@@ -150,7 +151,7 @@ describe("exportStories", () => {
 
 		await exportStories(createMockClient({ issues: issuesFn }), {
 			config: defaultConfig,
-			filters: { label: "Epic" },
+			filters: { label: "Epic", topLevelOnly: true },
 			team: "Engineering",
 			outputPath,
 		});
@@ -238,6 +239,113 @@ describe("exportStories", () => {
 		).rejects.toThrow("Linear unavailable");
 
 		expect(readFileSync(outputPath, "utf-8")).toBe("original export");
+	});
+
+	test("rejects returned issues outside the resolved scope without overwriting output", async () => {
+		const outputPath = join(tmpDir, "scope-mismatch.md");
+		await Bun.write(outputPath, "original export");
+		const client = createMockClient({
+			issues: async () => ({
+				nodes: [
+					createMockIssueNode({
+						project: Promise.resolve({ id: "other-project", name: "Other project" }),
+						team: Promise.resolve({ id: "other-team", name: "Other team", key: "OTHER" }),
+					}),
+				],
+				pageInfo: { hasNextPage: false, endCursor: null },
+			}),
+		});
+
+		await expect(
+			exportStories(client, {
+				config: defaultConfig,
+				filters: { project: "Q1 Release" },
+				team: "Engineering",
+				outputPath,
+			}),
+		).rejects.toThrow("ENG-42 is outside the requested team");
+
+		expect(readFileSync(outputPath, "utf-8")).toBe("original export");
+	});
+
+	test("rejects returned issues outside the requested project", async () => {
+		const outputPath = join(tmpDir, "project-mismatch.md");
+		const client = createMockClient({
+			issues: async () => ({
+				nodes: [
+					createMockIssueNode({
+						project: Promise.resolve({ id: "other-project", name: "Other project" }),
+					}),
+				],
+				pageInfo: { hasNextPage: false, endCursor: null },
+			}),
+		});
+
+		await expect(
+			exportStories(client, {
+				config: defaultConfig,
+				filters: { project: "Q1 Release" },
+				team: "Engineering",
+				outputPath,
+			}),
+		).rejects.toThrow("ENG-42 is outside the requested project");
+
+		expect(existsSync(outputPath)).toBe(false);
+	});
+
+	test("rejects returned issues that do not satisfy epic-only validation", async () => {
+		const outputPath = join(tmpDir, "invalid-epic.md");
+		const client = createMockClient({
+			issues: async () => ({
+				nodes: [
+					createMockIssueNode({
+						labels: { nodes: [{ name: "Feature" }] },
+					}),
+				],
+				pageInfo: { hasNextPage: false, endCursor: null },
+			}),
+		});
+
+		await expect(
+			exportStories(client, {
+				config: defaultConfig,
+				filters: { label: "Epic", topLevelOnly: true },
+				team: "Engineering",
+				outputPath,
+			}),
+		).rejects.toThrow('ENG-42 is missing the requested label "Epic"');
+
+		expect(existsSync(outputPath)).toBe(false);
+	});
+
+	test("rejects Epic-labelled child issues from epic-only exports", async () => {
+		const outputPath = join(tmpDir, "child-epic.md");
+		const client = createMockClient({
+			issues: async () => ({
+				nodes: [
+					createMockIssueNode({
+						labels: { nodes: [{ name: "Epic" }] },
+						parent: Promise.resolve({
+							id: "parent-id",
+							identifier: "ENG-1",
+							title: "Parent",
+						}),
+					}),
+				],
+				pageInfo: { hasNextPage: false, endCursor: null },
+			}),
+		});
+
+		await expect(
+			exportStories(client, {
+				config: defaultConfig,
+				filters: { label: "Epic", topLevelOnly: true },
+				team: "Engineering",
+				outputPath,
+			}),
+		).rejects.toThrow("ENG-42 is not a top-level issue");
+
+		expect(existsSync(outputPath)).toBe(false);
 	});
 
 	// =========================================================================

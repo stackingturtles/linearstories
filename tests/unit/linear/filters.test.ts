@@ -11,14 +11,16 @@ describe("buildIssueFilter", () => {
 		});
 	});
 
-	test("with team and label", () => {
+	test("with team and top-level label", () => {
 		const filter = buildIssueFilter({
 			teamId: "team-uuid",
 			labelName: "Epic",
+			topLevelOnly: true,
 		});
 		expect(filter).toEqual({
 			team: { id: { eq: "team-uuid" } },
 			labels: { name: { eq: "Epic" } },
+			parent: { null: true },
 		});
 	});
 
