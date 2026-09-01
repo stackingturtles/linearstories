@@ -581,18 +581,23 @@
 		const criteriaMarkup =
 			node.type === "story"
 				? `
-          <h3 class="inspector__section-title">Acceptance criteria</h3>
-          <ul class="criteria-list">
+          <section class="inspector__section" aria-labelledby="criteria-title">
+            <div class="inspector__section-heading">
+              <h3 class="inspector__section-title" id="criteria-title">Acceptance criteria</h3>
+              <span class="inspector__section-count">${node.progress.completedCriteria}/${node.progress.totalCriteria}</span>
+            </div>
+          <ol class="criteria-list">
             ${node.criteria
 							.map(
 								(criterion) => `
 				  <li class="criterion ${criterion.completed ? "is-complete" : "is-not-started"}">
                     <span class="criterion__dash" aria-hidden="true"></span>
-                    <span>${escapeHtml(criterion.text)}</span>
+                    <span class="criterion__text">${escapeHtml(criterion.text)}</span>
                   </li>`,
 							)
 							.join("")}
-          </ul>`
+          </ol>
+          </section>`
 				: "";
 
 		const labels = (node.labels ?? []).filter((label) => label !== "Epic");
@@ -606,21 +611,27 @@
 			: "";
 
 		inspector.innerHTML = `
-      <span class="inspector__kicker">${escapeHtml(typeLabel)} · ${escapeHtml(node.id)}</span>
-      <h2>${escapeHtml(node.title)}</h2>
-      <div class="inspector__status" data-status="${escapeHtml(node.status)}">${escapeHtml(statusLabel[node.status])}</div>
-      <div class="inspector__progress">
-        <div class="inspector__progress-label">
-          <span>${escapeHtml(progressLabel)}</span>
-          <span>${progressPercent(completed, total)}%</span>
-        </div>
-        <div class="inspector__progress-track" aria-hidden="true">
-          <div class="inspector__progress-fill" style="width: ${progressPercent(completed, total)}%"></div>
+      <header class="inspector__header">
+        <span class="inspector__kicker">${escapeHtml(typeLabel)} · ${escapeHtml(node.id)}</span>
+        <h2>${escapeHtml(node.title)}</h2>
+      </header>
+      <div class="inspector__summary">
+        <div class="inspector__status" data-status="${escapeHtml(node.status)}">${escapeHtml(statusLabel[node.status])}</div>
+        <div class="inspector__progress">
+          <div class="inspector__progress-label">
+            <span>${escapeHtml(progressLabel)}</span>
+            <strong>${progressPercent(completed, total)}%</strong>
+          </div>
+          <div class="inspector__progress-track" aria-hidden="true">
+            <div class="inspector__progress-fill" style="width: ${progressPercent(completed, total)}%"></div>
+          </div>
         </div>
       </div>
       ${criteriaMarkup}
-      ${tagsMarkup}
-      ${linearLink}
+      <footer class="inspector__footer">
+        ${tagsMarkup}
+        ${linearLink}
+      </footer>
     `;
 	}
 
