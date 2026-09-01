@@ -36,6 +36,7 @@ test("visualize help exposes the local server options", () => {
 
 	expect(result.exitCode).toBe(0);
 	expect(output).toContain("<file>");
+	expect(output).toContain("--host <host>");
 	expect(output).toContain("--port <port>");
 	expect(output).toContain("--no-open");
 });

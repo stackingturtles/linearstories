@@ -519,6 +519,7 @@ linearstories visualize <file> [options]
 
 | Flag | Description | Default |
 |------|-------------|---------|
+| `--host <host>` | HTTP server host | `127.0.0.1` |
 | `-p, --port <port>` | Local HTTP server port | `4173` |
 | `--no-open` | Start the server without opening a browser | |
 
@@ -530,7 +531,7 @@ Project Atlas provides:
 - A details panel with issue title, progress, acceptance criteria, labels, and the Linear link when `linear_url` is present.
 - Unfiltered project totals in the header while category filters change only the visible graph.
 
-The server binds to `127.0.0.1`, exposes only embedded visualization assets and the parsed graph, and stops when you press `Ctrl+C`. The command does not read `.linearrc.json`, require `LINEAR_API_KEY`, write to the markdown file, or contact Linear. The browser loads D3 and web fonts from their public CDNs.
+By default, the server binds to `127.0.0.1`. Use `--host 0.0.0.0` to make it available on all network interfaces. The server exposes only embedded visualization assets and the parsed graph, and stops when you press `Ctrl+C`. The command does not read `.linearrc.json`, require `LINEAR_API_KEY`, write to the markdown file, or contact Linear. The browser loads D3 and web fonts from their public CDNs.
 
 ```bash
 # Open the atlas in the default browser
@@ -538,6 +539,9 @@ linearstories visualize stories/current.md
 
 # Choose a port and open the URL manually
 linearstories visualize stories/current.md --port 8080 --no-open
+
+# Make the visualization available to other devices on the network
+linearstories visualize stories/current.md --host 0.0.0.0 --no-open
 ```
 
 ### `linearstories export`

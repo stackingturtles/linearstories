@@ -10,6 +10,17 @@ afterEach(() => {
 });
 
 describe("visualization server", () => {
+	test("binds to a configured host", () => {
+		const graph = buildProjectGraph(
+			parseMarkdownFile("## As a user, I want a visual map", "stories.md"),
+		);
+		const running = startVisualizationServer({ graph, hostname: "0.0.0.0", port: 0 });
+		servers.push(running.server);
+
+		expect(running.server.hostname).toBe("0.0.0.0");
+		expect(running.url).toBe(`http://0.0.0.0:${running.server.port}`);
+	});
+
 	test("serves embedded UI assets and parsed graph data", async () => {
 		const parsed = parseMarkdownFile(
 			`---

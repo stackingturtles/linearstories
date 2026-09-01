@@ -7,8 +7,10 @@ import { buildProjectGraph } from "../../visualization/graph.ts";
 import { openBrowser, startVisualizationServer } from "../../visualization/server.ts";
 
 const DEFAULT_PORT = 4173;
+const DEFAULT_HOST = "127.0.0.1";
 
 interface VisualizeOptions {
+	host: string;
 	port: number;
 	open: boolean;
 }
@@ -18,6 +20,7 @@ export function registerVisualizeCommand(program: Command): void {
 		.command("visualize")
 		.description("Visualize epics, user stories, and acceptance criteria in a local browser")
 		.argument("<file>", "LinearStories markdown file")
+		.option("--host <host>", "HTTP server host", DEFAULT_HOST)
 		.option("-p, --port <port>", "Local HTTP server port", parsePort, DEFAULT_PORT)
 		.option("--no-open", "Start the server without opening a browser")
 		.action(async (file: string, options: VisualizeOptions) => {
@@ -32,6 +35,7 @@ export function registerVisualizeCommand(program: Command): void {
 				const graph = buildProjectGraph(parsed);
 				const { server, url } = startVisualizationServer({
 					graph,
+					hostname: options.host,
 					port: options.port,
 				});
 

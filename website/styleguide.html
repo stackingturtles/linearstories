@@ -1,0 +1,2193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="The LinearStories visual language: colour, typography, components, patterns, and accessibility guidance." />
+  <meta name="robots" content="noindex" />
+
+  <title>LinearStories — Styleguide</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&amp;family=Instrument+Serif:ital@0;1&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    :root {
+      --sg-sidebar-width: 264px;
+      --sg-content-width: 1180px;
+      --sg-grid-line: rgba(136, 146, 168, 0.055);
+      --sg-shadow-sm: 0 8px 24px rgba(0, 0, 0, 0.2);
+      --sg-shadow-lg: 0 30px 90px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(14, 165, 233, 0.04);
+      --sg-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    html {
+      scroll-padding-top: 24px;
+    }
+
+    body.sg-page {
+      min-height: 100vh;
+      background:
+        linear-gradient(var(--sg-grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--sg-grid-line) 1px, transparent 1px),
+        radial-gradient(circle at 78% 4%, rgba(14, 165, 233, 0.09), transparent 26rem),
+        var(--bg-base);
+      background-size: 48px 48px, 48px 48px, auto, auto;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button,
+    label,
+    select {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .sg-mobile-bar,
+    .sg-scrim {
+      display: none;
+    }
+
+    .sg-sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 200;
+      width: var(--sg-sidebar-width);
+      overflow-y: auto;
+      border-right: 1px solid var(--border-subtle);
+      background: rgba(10, 13, 18, 0.9);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+
+    .sg-sidebar-head {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding: 24px 22px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(10, 13, 18, 0.94);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .sg-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-primary);
+      text-decoration: none;
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .sg-brand-mark {
+      display: grid;
+      width: 28px;
+      height: 28px;
+      place-items: center;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+      box-shadow: 0 0 24px rgba(14, 165, 233, 0.2);
+    }
+
+    .sg-brand-mark svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .sg-brand-meta {
+      display: block;
+      margin-top: 10px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .sg-nav {
+      display: grid;
+      gap: 2px;
+      padding: 18px 14px 36px;
+    }
+
+    .sg-nav-group {
+      margin: 18px 10px 8px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.58rem;
+      font-weight: 600;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    .sg-nav a {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      align-items: center;
+      min-height: 36px;
+      padding: 5px 10px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.78rem;
+      transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+    }
+
+    .sg-nav a::before {
+      content: attr(data-index);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.61rem;
+      transition: color 150ms ease;
+    }
+
+    .sg-nav a:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .sg-nav a.is-active {
+      border-color: rgba(14, 165, 233, 0.18);
+      color: var(--text-primary);
+      background: rgba(14, 165, 233, 0.08);
+    }
+
+    .sg-nav a.is-active::before {
+      color: var(--accent-mid);
+    }
+
+    .sg-main {
+      margin-left: var(--sg-sidebar-width);
+    }
+
+    .sg-wrap {
+      width: min(calc(100% - 64px), var(--sg-content-width));
+      margin-inline: auto;
+    }
+
+    .sg-masthead {
+      position: relative;
+      display: grid;
+      min-height: 570px;
+      align-content: center;
+      overflow: hidden;
+      padding-block: 100px 88px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .sg-masthead::before {
+      content: "";
+      position: absolute;
+      top: -230px;
+      left: 42%;
+      width: 680px;
+      height: 680px;
+      border: 1px solid rgba(14, 165, 233, 0.12);
+      border-radius: 50%;
+      box-shadow:
+        0 0 0 70px rgba(14, 165, 233, 0.025),
+        0 0 0 140px rgba(14, 165, 233, 0.014);
+      pointer-events: none;
+    }
+
+    .sg-masthead::after {
+      content: "GOAL  →  WORK  →  PROOF";
+      position: absolute;
+      right: -38px;
+      bottom: 42px;
+      color: rgba(136, 146, 168, 0.12);
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.28em;
+      transform: rotate(-90deg);
+      transform-origin: center;
+    }
+
+    .sg-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      width: fit-content;
+      margin-bottom: 28px;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .sg-kicker::before {
+      content: "";
+      width: 24px;
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent-start), var(--accent-end));
+    }
+
+    .sg-masthead h1 {
+      max-width: 780px;
+      margin-bottom: 24px;
+      font-family: var(--font-display);
+      font-size: clamp(3.5rem, 8vw, 7rem);
+      font-style: italic;
+      font-weight: 400;
+      line-height: 0.88;
+      letter-spacing: -0.035em;
+    }
+
+    .sg-masthead h1 span {
+      display: block;
+      padding-bottom: 0.08em;
+      background: linear-gradient(120deg, var(--accent-start), var(--accent-end));
+      background-clip: text;
+      color: transparent;
+      -webkit-background-clip: text;
+    }
+
+    .sg-intro {
+      max-width: 650px;
+      color: var(--text-secondary);
+      font-size: clamp(1rem, 2vw, 1.14rem);
+      line-height: 1.75;
+    }
+
+    .sg-principles {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      max-width: 840px;
+      margin-top: 48px;
+      border-top: 1px solid var(--border-muted);
+    }
+
+    .sg-principle {
+      position: relative;
+      padding: 18px 22px 0 0;
+    }
+
+    .sg-principle + .sg-principle {
+      padding-left: 22px;
+      border-left: 1px solid var(--border-subtle);
+    }
+
+    .sg-principle span {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--accent-mid);
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .sg-principle strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text-primary);
+      font-size: 0.82rem;
+    }
+
+    .sg-principle p {
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      line-height: 1.5;
+    }
+
+    .sg-section {
+      padding-block: 92px;
+      border-bottom: 1px solid var(--border-subtle);
+      scroll-margin-top: 24px;
+    }
+
+    .sg-section-head {
+      display: grid;
+      grid-template-columns: 200px minmax(0, 1fr);
+      gap: 48px;
+      margin-bottom: 48px;
+    }
+
+    .sg-section-index {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      align-self: start;
+      padding-top: 8px;
+      color: var(--accent-mid);
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .sg-section-index::after {
+      content: "";
+      width: 44px;
+      height: 1px;
+      background: rgba(14, 165, 233, 0.35);
+    }
+
+    .sg-section-title {
+      margin-bottom: 12px;
+      color: var(--text-primary);
+      font-size: clamp(1.8rem, 4vw, 2.7rem);
+      font-weight: 700;
+      line-height: 1.12;
+      letter-spacing: -0.035em;
+    }
+
+    .sg-section-desc {
+      max-width: 64ch;
+      color: var(--text-secondary);
+      font-size: 0.98rem;
+      line-height: 1.7;
+    }
+
+    .sg-subsection + .sg-subsection {
+      margin-top: 46px;
+    }
+
+    .sg-label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .sg-label::after {
+      content: "";
+      width: 28px;
+      height: 1px;
+      background: var(--border-muted);
+    }
+
+    .sg-preview {
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      background: rgba(15, 18, 24, 0.76);
+      box-shadow: var(--sg-shadow-sm);
+    }
+
+    .sg-preview-pad {
+      padding: clamp(20px, 4vw, 36px);
+    }
+
+    .sg-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .sg-stack {
+      display: grid;
+      gap: 16px;
+    }
+
+    .sg-grid-2,
+    .sg-grid-3,
+    .sg-grid-4 {
+      display: grid;
+      gap: 16px;
+    }
+
+    .sg-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sg-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .sg-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+    .sg-note {
+      margin-top: 14px;
+      color: var(--text-muted);
+      font-size: 0.76rem;
+      line-height: 1.6;
+    }
+
+    .sg-note code,
+    .sg-token {
+      color: var(--accent-mid);
+      font-family: var(--font-mono);
+      font-size: 0.92em;
+    }
+
+    /* Colours */
+    .sg-palette {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--sg-shadow-sm);
+    }
+
+    .sg-swatch {
+      position: relative;
+      min-height: 174px;
+      padding: 18px;
+      overflow: hidden;
+      border: 0;
+      border-right: 1px solid var(--border-subtle);
+      background: var(--swatch);
+      color: var(--swatch-text, #f0f2f8);
+      cursor: pointer;
+    }
+
+    .sg-swatch:last-child {
+      border-right: 0;
+    }
+
+    .sg-swatch::after {
+      content: "Copy";
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      padding: 4px 7px;
+      border: 1px solid currentColor;
+      border-radius: 100px;
+      opacity: 0;
+      font-family: var(--font-mono);
+      font-size: 0.56rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition: opacity 160ms ease;
+    }
+
+    .sg-swatch:hover::after,
+    .sg-swatch:focus-visible::after {
+      opacity: 0.65;
+    }
+
+    .sg-swatch-name,
+    .sg-swatch-value,
+    .sg-swatch-token {
+      position: relative;
+      z-index: 1;
+      display: block;
+    }
+
+    .sg-swatch-name {
+      margin-top: 74px;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .sg-swatch-value,
+    .sg-swatch-token {
+      font-family: var(--font-mono);
+      font-size: 0.61rem;
+    }
+
+    .sg-swatch-value { margin-top: 3px; opacity: 0.7; }
+    .sg-swatch-token { margin-top: 12px; opacity: 0.5; }
+
+    .sg-accent-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      min-height: 124px;
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+    }
+
+    .sg-accent {
+      display: flex;
+      flex-direction: column;
+      justify-content: end;
+      padding: 18px;
+      color: #fff;
+    }
+
+    .sg-accent strong { font-size: 0.8rem; }
+    .sg-accent span { font-family: var(--font-mono); font-size: 0.62rem; opacity: 0.7; }
+
+    .sg-semantic {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .sg-semantic-card {
+      padding: 16px;
+      border: 1px solid color-mix(in srgb, var(--semantic) 28%, transparent);
+      border-radius: var(--radius-md);
+      background: color-mix(in srgb, var(--semantic) 8%, var(--bg-surface));
+    }
+
+    .sg-semantic-dot {
+      width: 12px;
+      height: 12px;
+      margin-bottom: 24px;
+      border-radius: 50%;
+      background: var(--semantic);
+      box-shadow: 0 0 18px color-mix(in srgb, var(--semantic) 40%, transparent);
+    }
+
+    .sg-semantic-card strong { display: block; font-size: 0.78rem; }
+    .sg-semantic-card span { color: var(--text-muted); font-family: var(--font-mono); font-size: 0.6rem; }
+
+    /* Typography */
+    .sg-type-row {
+      display: grid;
+      grid-template-columns: 150px minmax(0, 1fr);
+      align-items: baseline;
+      gap: 26px;
+      padding: 24px 28px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .sg-type-row:last-child { border-bottom: 0; }
+
+    .sg-type-meta {
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.61rem;
+      line-height: 1.55;
+    }
+
+    .sg-type-display {
+      font-family: var(--font-display);
+      font-size: clamp(2.8rem, 6vw, 5rem);
+      font-style: italic;
+      font-weight: 400;
+      line-height: 0.98;
+      letter-spacing: -0.025em;
+    }
+
+    .sg-type-h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.08; letter-spacing: -0.035em; }
+    .sg-type-h2 { font-size: 2rem; font-weight: 700; line-height: 1.15; letter-spacing: -0.025em; }
+    .sg-type-h3 { font-size: 1.25rem; font-weight: 700; line-height: 1.3; letter-spacing: -0.015em; }
+    .sg-type-body { max-width: 62ch; color: var(--text-secondary); font-size: 1rem; line-height: 1.7; }
+    .sg-type-small { color: var(--text-muted); font-size: 0.78rem; line-height: 1.6; }
+    .sg-type-mono { color: var(--accent-mid); font-family: var(--font-mono); font-size: 0.8rem; }
+
+    .sg-font-card {
+      min-height: 176px;
+      padding: 24px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      background: var(--bg-raised);
+    }
+
+    .sg-font-card .sg-font-glyphs {
+      margin-bottom: 28px;
+      color: var(--text-primary);
+      font-size: 2.25rem;
+      line-height: 1;
+    }
+
+    .sg-font-card strong { display: block; font-size: 0.82rem; }
+    .sg-font-card span { color: var(--text-muted); font-family: var(--font-mono); font-size: 0.6rem; }
+
+    /* Metrics */
+    .sg-space-scale {
+      display: grid;
+      gap: 12px;
+      padding: 28px;
+    }
+
+    .sg-space-row {
+      display: grid;
+      grid-template-columns: 94px minmax(0, 1fr) 48px;
+      align-items: center;
+      gap: 16px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+    }
+
+    .sg-space-bar {
+      width: min(var(--bar), 100%);
+      height: 10px;
+      border-radius: 100px;
+      background: linear-gradient(90deg, var(--accent-start), var(--accent-end));
+      box-shadow: 0 0 18px rgba(14, 165, 233, 0.12);
+    }
+
+    .sg-radius-card,
+    .sg-shadow-card {
+      display: grid;
+      min-height: 150px;
+      place-items: center;
+      padding: 22px;
+      border: 1px solid var(--border-muted);
+      background: var(--bg-raised);
+    }
+
+    .sg-radius-card span,
+    .sg-shadow-card span {
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+    }
+
+    .sg-shadow-card { border-radius: var(--radius-md); }
+
+    /* Buttons */
+    .sg-button {
+      display: inline-flex;
+      min-height: 40px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 9px 18px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 0.84rem;
+      font-weight: 600;
+      line-height: 1;
+      cursor: pointer;
+      transition: transform 150ms ease, border-color 150ms ease, background 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+    }
+
+    .sg-button:hover:not(:disabled) { transform: translateY(-2px); }
+    .sg-button:active:not(:disabled) { transform: translateY(0); }
+
+    .sg-button-primary {
+      background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+      box-shadow: 0 8px 24px rgba(14, 165, 233, 0.14);
+    }
+
+    .sg-button-primary:hover:not(:disabled) {
+      box-shadow: 0 12px 32px rgba(14, 165, 233, 0.23);
+    }
+
+    .sg-button-secondary {
+      border-color: var(--border-muted);
+      background: var(--bg-raised);
+    }
+
+    .sg-button-secondary:hover:not(:disabled) {
+      border-color: rgba(255, 255, 255, 0.2);
+      background: var(--bg-overlay);
+    }
+
+    .sg-button-ghost {
+      color: var(--text-secondary);
+      background: transparent;
+    }
+
+    .sg-button-ghost:hover:not(:disabled) {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .sg-button-danger {
+      border-color: rgba(248, 113, 113, 0.25);
+      color: var(--red);
+      background: rgba(248, 113, 113, 0.08);
+    }
+
+    .sg-button-danger:hover:not(:disabled) {
+      background: rgba(248, 113, 113, 0.14);
+    }
+
+    .sg-button-sm { min-height: 32px; padding: 7px 12px; font-size: 0.75rem; }
+    .sg-button-lg { min-height: 48px; padding: 12px 26px; font-size: 0.95rem; }
+
+    .sg-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.42;
+      filter: saturate(0.45);
+    }
+
+    .sg-button-loading::before {
+      content: "";
+      width: 13px;
+      height: 13px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: sg-spin 700ms linear infinite;
+    }
+
+    .sg-icon-button {
+      display: grid;
+      width: 40px;
+      height: 40px;
+      place-items: center;
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      background: transparent;
+      cursor: pointer;
+      transition: color 150ms ease, background 150ms ease, border-color 150ms ease;
+    }
+
+    .sg-icon-button:hover {
+      border-color: rgba(255, 255, 255, 0.22);
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .sg-icon-button svg { width: 17px; height: 17px; }
+
+    @keyframes sg-spin { to { transform: rotate(1turn); } }
+
+    /* Forms */
+    .sg-field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .sg-form-label {
+      color: var(--text-secondary);
+      font-size: 0.76rem;
+      font-weight: 600;
+    }
+
+    .sg-form-label span {
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .sg-input,
+    .sg-select,
+    .sg-textarea {
+      width: 100%;
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-sm);
+      outline: none;
+      color: var(--text-primary);
+      background: var(--code-bg);
+      font-size: 0.84rem;
+      transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+    }
+
+    .sg-input,
+    .sg-select { height: 42px; padding: 0 13px; }
+    .sg-textarea { min-height: 112px; padding: 11px 13px; line-height: 1.55; resize: vertical; }
+
+    .sg-input::placeholder,
+    .sg-textarea::placeholder { color: var(--text-muted); }
+
+    .sg-input:hover:not(:disabled),
+    .sg-select:hover:not(:disabled),
+    .sg-textarea:hover:not(:disabled) {
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .sg-input:focus,
+    .sg-select:focus,
+    .sg-textarea:focus {
+      border-color: var(--accent-mid);
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
+      background: #0d121b;
+    }
+
+    .sg-input[aria-invalid="true"] {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.08);
+    }
+
+    .sg-input:disabled,
+    .sg-select:disabled,
+    .sg-textarea:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .sg-help,
+    .sg-error {
+      color: var(--text-muted);
+      font-size: 0.7rem;
+    }
+
+    .sg-error { color: var(--red); }
+
+    .sg-select-wrap {
+      position: relative;
+    }
+
+    .sg-select {
+      appearance: none;
+      padding-right: 38px;
+    }
+
+    .sg-select-wrap::after {
+      content: "";
+      position: absolute;
+      top: 16px;
+      right: 15px;
+      width: 7px;
+      height: 7px;
+      border-right: 1.5px solid var(--text-muted);
+      border-bottom: 1.5px solid var(--text-muted);
+      pointer-events: none;
+      transform: rotate(45deg);
+    }
+
+    .sg-choice {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .sg-choice input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+    }
+
+    .sg-control {
+      position: relative;
+      display: grid;
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 1px solid var(--border-muted);
+      border-radius: 4px;
+      background: var(--code-bg);
+      transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+    }
+
+    .sg-choice input[type="radio"] + .sg-control { border-radius: 50%; }
+
+    .sg-choice input:checked + .sg-control {
+      border-color: var(--accent-mid);
+      background: var(--accent-mid);
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+    }
+
+    .sg-choice input[type="checkbox"]:checked + .sg-control::after {
+      content: "";
+      width: 8px;
+      height: 4px;
+      border-bottom: 2px solid #fff;
+      border-left: 2px solid #fff;
+      transform: translateY(-1px) rotate(-45deg);
+    }
+
+    .sg-choice input[type="radio"]:checked + .sg-control::after {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #fff;
+    }
+
+    .sg-choice input:focus-visible + .sg-control {
+      outline: 2px solid var(--accent-mid);
+      outline-offset: 3px;
+    }
+
+    .sg-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .sg-switch input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+    }
+
+    .sg-switch-track {
+      position: relative;
+      width: 38px;
+      height: 22px;
+      border: 1px solid var(--border-muted);
+      border-radius: 100px;
+      background: var(--bg-overlay);
+      transition: border-color 150ms ease, background 150ms ease;
+    }
+
+    .sg-switch-track::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--text-secondary);
+      transition: transform 180ms var(--sg-ease-out), background 150ms ease;
+    }
+
+    .sg-switch input:checked + .sg-switch-track {
+      border-color: var(--accent-mid);
+      background: rgba(14, 165, 233, 0.24);
+    }
+
+    .sg-switch input:checked + .sg-switch-track::after {
+      background: #fff;
+      transform: translateX(16px);
+    }
+
+    .sg-switch input:focus-visible + .sg-switch-track {
+      outline: 2px solid var(--accent-mid);
+      outline-offset: 3px;
+    }
+
+    .sg-range {
+      width: 100%;
+      height: 4px;
+      appearance: none;
+      border-radius: 100px;
+      outline: none;
+      background: linear-gradient(90deg, var(--accent-mid) 0 70%, var(--bg-overlay) 70% 100%);
+    }
+
+    .sg-range::-webkit-slider-thumb {
+      width: 18px;
+      height: 18px;
+      appearance: none;
+      border: 3px solid var(--bg-base);
+      border-radius: 50%;
+      background: var(--accent-mid);
+      box-shadow: 0 0 0 1px var(--accent-mid), 0 0 16px rgba(14, 165, 233, 0.35);
+      cursor: grab;
+    }
+
+    /* Cards and status */
+    .sg-card {
+      padding: 22px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      background: var(--bg-raised);
+      transition: transform 200ms var(--sg-ease-out), border-color 200ms ease, box-shadow 200ms ease;
+    }
+
+    .sg-card-interactive:hover {
+      border-color: rgba(14, 165, 233, 0.18);
+      box-shadow: var(--sg-shadow-lg);
+      transform: translateY(-3px);
+    }
+
+    .sg-card-icon {
+      display: grid;
+      width: 40px;
+      height: 40px;
+      margin-bottom: 28px;
+      place-items: center;
+      border: 1px solid rgba(14, 165, 233, 0.2);
+      border-radius: var(--radius-md);
+      color: var(--accent-mid);
+      background: rgba(14, 165, 233, 0.09);
+    }
+
+    .sg-card-icon svg { width: 18px; height: 18px; }
+    .sg-card h3 { margin-bottom: 8px; font-size: 0.98rem; }
+    .sg-card p { color: var(--text-secondary); font-size: 0.82rem; line-height: 1.65; }
+
+    .sg-story-card {
+      position: relative;
+      overflow: hidden;
+      padding: 22px 22px 20px 26px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      background: var(--bg-raised);
+    }
+
+    .sg-story-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 3px;
+      background: linear-gradient(var(--accent-start), var(--accent-end));
+    }
+
+    .sg-story-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.61rem;
+    }
+
+    .sg-story-card h3 { margin-bottom: 5px; font-size: 0.94rem; }
+    .sg-story-card p { color: var(--text-secondary); font-size: 0.78rem; }
+
+    .sg-progress {
+      height: 5px;
+      margin-top: 18px;
+      overflow: hidden;
+      border-radius: 100px;
+      background: var(--bg-overlay);
+    }
+
+    .sg-progress span {
+      display: block;
+      width: var(--progress);
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent-start), var(--accent-end));
+    }
+
+    .sg-badge {
+      display: inline-flex;
+      min-height: 24px;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border: 1px solid var(--badge-border, var(--border-muted));
+      border-radius: 100px;
+      color: var(--badge-color, var(--text-secondary));
+      background: var(--badge-bg, var(--bg-raised));
+      font-size: 0.68rem;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .sg-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .sg-badge-blue { --badge-color: #38bdf8; --badge-border: rgba(56, 189, 248, 0.24); --badge-bg: rgba(56, 189, 248, 0.08); }
+    .sg-badge-green { --badge-color: var(--green); --badge-border: rgba(52, 211, 153, 0.24); --badge-bg: rgba(52, 211, 153, 0.08); }
+    .sg-badge-amber { --badge-color: var(--amber); --badge-border: rgba(251, 191, 36, 0.24); --badge-bg: rgba(251, 191, 36, 0.08); }
+    .sg-badge-red { --badge-color: var(--red); --badge-border: rgba(248, 113, 113, 0.24); --badge-bg: rgba(248, 113, 113, 0.08); }
+
+    .sg-tag {
+      display: inline-flex;
+      padding: 4px 8px;
+      border: 1px solid rgba(14, 165, 233, 0.18);
+      border-radius: 4px;
+      color: var(--accent-mid);
+      background: rgba(14, 165, 233, 0.07);
+      font-family: var(--font-mono);
+      font-size: 0.64rem;
+    }
+
+    /* Feedback */
+    .sg-alert {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      padding: 16px;
+      border: 1px solid color-mix(in srgb, var(--alert) 24%, transparent);
+      border-radius: var(--radius-md);
+      background: color-mix(in srgb, var(--alert) 7%, var(--bg-raised));
+    }
+
+    .sg-alert-icon {
+      display: grid;
+      width: 28px;
+      height: 28px;
+      place-items: center;
+      border-radius: 50%;
+      color: var(--alert);
+      background: color-mix(in srgb, var(--alert) 12%, transparent);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    .sg-alert strong { display: block; margin-bottom: 2px; font-size: 0.78rem; }
+    .sg-alert p { color: var(--text-secondary); font-size: 0.74rem; line-height: 1.5; }
+
+    .sg-toast {
+      position: fixed;
+      z-index: 500;
+      right: 24px;
+      bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border: 1px solid rgba(52, 211, 153, 0.24);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      background: rgba(22, 26, 36, 0.96);
+      box-shadow: var(--sg-shadow-lg);
+      font-size: 0.78rem;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(12px);
+      transition: opacity 180ms ease, transform 220ms var(--sg-ease-out);
+    }
+
+    .sg-toast.is-visible { opacity: 1; transform: translateY(0); }
+
+    .sg-toast::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 12px rgba(52, 211, 153, 0.65);
+    }
+
+    /* Data and code */
+    .sg-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      background: var(--bg-surface);
+    }
+
+    .sg-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 680px;
+      font-size: 0.78rem;
+    }
+
+    .sg-table th {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-muted);
+      color: var(--text-muted);
+      background: var(--bg-raised);
+      font-family: var(--font-mono);
+      font-size: 0.58rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-align: left;
+      text-transform: uppercase;
+    }
+
+    .sg-table td {
+      padding: 15px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+
+    .sg-table tbody tr:last-child td { border-bottom: 0; }
+    .sg-table tbody tr:hover td { background: rgba(255, 255, 255, 0.018); }
+    .sg-table strong { color: var(--text-primary); }
+
+    .sg-code-window {
+      overflow: hidden;
+      border: 1px solid var(--code-border);
+      border-radius: var(--radius-lg);
+      background: var(--code-bg);
+      box-shadow: var(--sg-shadow-lg);
+    }
+
+    .sg-code-chrome {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 42px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .sg-code-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .sg-code-title { margin-left: auto; color: var(--text-muted); font-family: var(--font-mono); font-size: 0.62rem; }
+    .sg-code-body { padding: 22px; overflow-x: auto; }
+    .sg-code-body pre { color: var(--text-secondary); font-family: var(--font-mono); font-size: 0.74rem; line-height: 1.8; }
+
+    .sg-inline-code {
+      padding: 2px 6px;
+      border: 1px solid var(--code-border);
+      border-radius: 4px;
+      color: var(--accent-mid);
+      background: var(--code-bg);
+      font-family: var(--font-mono);
+      font-size: 0.82em;
+    }
+
+    /* Patterns */
+    .sg-tabs {
+      display: flex;
+      gap: 3px;
+      padding: 4px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      background: var(--code-bg);
+    }
+
+    .sg-tab {
+      flex: 1;
+      min-height: 34px;
+      padding: 6px 10px;
+      border: 0;
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      background: transparent;
+      font-size: 0.74rem;
+      cursor: pointer;
+    }
+
+    .sg-tab[aria-selected="true"] {
+      color: var(--text-primary);
+      background: var(--bg-overlay);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.24);
+    }
+
+    .sg-tab-panel {
+      min-height: 110px;
+      padding: 20px 4px 2px;
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      line-height: 1.65;
+    }
+
+    .sg-pattern-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      min-height: 58px;
+      padding: 0 18px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      background: rgba(15, 18, 24, 0.9);
+    }
+
+    .sg-pattern-links { display: flex; gap: 22px; }
+    .sg-pattern-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.75rem; }
+
+    .sg-acceptance {
+      position: relative;
+      padding-left: 30px;
+    }
+
+    .sg-acceptance::before {
+      content: "";
+      position: absolute;
+      top: 6px;
+      bottom: 8px;
+      left: 8px;
+      width: 1px;
+      background: linear-gradient(var(--accent-mid), rgba(14, 165, 233, 0.08));
+    }
+
+    .sg-criterion {
+      position: relative;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 9px 0;
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+    }
+
+    .sg-criterion::before {
+      content: "";
+      position: absolute;
+      top: 17px;
+      left: -22px;
+      width: 11px;
+      height: 1px;
+      background: rgba(14, 165, 233, 0.35);
+    }
+
+    .sg-check {
+      display: grid;
+      width: 17px;
+      height: 17px;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 1px solid rgba(52, 211, 153, 0.28);
+      border-radius: 50%;
+      color: var(--green);
+      background: rgba(52, 211, 153, 0.08);
+      font-size: 0.6rem;
+    }
+
+    .sg-rule-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .sg-rule {
+      min-height: 180px;
+      padding: 22px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      background: var(--bg-raised);
+    }
+
+    .sg-rule-head {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 18px;
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .sg-rule-head::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 12px currentColor;
+    }
+
+    .sg-rule ul {
+      display: grid;
+      gap: 9px;
+      padding-left: 17px;
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+      line-height: 1.55;
+    }
+
+    .sg-dialog {
+      width: min(calc(100% - 32px), 460px);
+      padding: 0;
+      overflow: hidden;
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-lg);
+      color: var(--text-primary);
+      background: var(--bg-raised);
+      box-shadow: 0 40px 120px rgba(0, 0, 0, 0.68);
+    }
+
+    .sg-dialog::backdrop {
+      background: rgba(4, 6, 10, 0.74);
+      backdrop-filter: blur(5px);
+    }
+
+    .sg-dialog-body { padding: 26px; }
+    .sg-dialog h3 { margin-bottom: 8px; font-size: 1.08rem; }
+    .sg-dialog p { color: var(--text-secondary); font-size: 0.82rem; line-height: 1.6; }
+    .sg-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 22px; border-top: 1px solid var(--border-subtle); background: var(--bg-surface); }
+
+    .sg-footer {
+      padding-block: 54px;
+      color: var(--text-muted);
+    }
+
+    .sg-footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      font-size: 0.72rem;
+    }
+
+    .sg-footer code { font-family: var(--font-mono); }
+    .sg-footer a { color: var(--text-secondary); text-decoration: none; }
+
+    @media (max-width: 1040px) {
+      .sg-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .sg-palette { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .sg-swatch:nth-child(2) { border-right: 0; }
+      .sg-swatch:nth-child(-n + 2) { border-bottom: 1px solid var(--border-subtle); }
+      .sg-semantic { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 820px) {
+      .sg-mobile-bar {
+        position: sticky;
+        top: 0;
+        z-index: 300;
+        display: flex;
+        height: 58px;
+        align-items: center;
+        justify-content: space-between;
+        padding-inline: 18px;
+        border-bottom: 1px solid var(--border-subtle);
+        background: rgba(10, 13, 18, 0.92);
+        backdrop-filter: blur(18px);
+      }
+
+      .sg-menu-button {
+        display: grid;
+        width: 36px;
+        height: 36px;
+        place-items: center;
+        border: 1px solid var(--border-muted);
+        border-radius: var(--radius-sm);
+        color: var(--text-primary);
+        background: transparent;
+      }
+
+      .sg-menu-button svg { width: 17px; height: 17px; }
+
+      .sg-sidebar {
+        width: min(86vw, 300px);
+        transform: translateX(-102%);
+        transition: transform 280ms var(--sg-ease-out);
+      }
+
+      .sg-sidebar.is-open { transform: translateX(0); }
+
+      .sg-scrim {
+        position: fixed;
+        inset: 0;
+        z-index: 190;
+        background: rgba(3, 5, 8, 0.7);
+        backdrop-filter: blur(3px);
+      }
+
+      .sg-scrim.is-visible { display: block; }
+      .sg-main { margin-left: 0; }
+      .sg-wrap { width: min(calc(100% - 38px), var(--sg-content-width)); }
+      .sg-masthead { min-height: 520px; padding-block: 70px; }
+      .sg-section { padding-block: 68px; }
+      .sg-section-head { grid-template-columns: 1fr; gap: 14px; }
+      .sg-section-index { padding-top: 0; }
+      .sg-grid-3 { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 620px) {
+      .sg-masthead h1 { font-size: clamp(3.2rem, 17vw, 5.4rem); }
+      .sg-principles { grid-template-columns: 1fr; }
+      .sg-principle { padding: 16px 0; border-bottom: 1px solid var(--border-subtle); }
+      .sg-principle + .sg-principle { padding-left: 0; border-left: 0; }
+      .sg-grid-2,
+      .sg-grid-4,
+      .sg-semantic,
+      .sg-accent-strip,
+      .sg-rule-grid { grid-template-columns: 1fr; }
+      .sg-palette { grid-template-columns: 1fr; }
+      .sg-swatch { min-height: 150px; border-right: 0; border-bottom: 1px solid var(--border-subtle); }
+      .sg-swatch:nth-child(3) { border-bottom: 1px solid var(--border-subtle); }
+      .sg-swatch:last-child { border-bottom: 0; }
+      .sg-type-row { grid-template-columns: 1fr; gap: 12px; padding: 22px; }
+      .sg-type-meta { padding-bottom: 10px; border-bottom: 1px solid var(--border-subtle); }
+      .sg-pattern-nav { align-items: flex-start; flex-direction: column; padding-block: 16px; }
+      .sg-pattern-links { flex-wrap: wrap; gap: 12px 18px; }
+      .sg-footer-inner { align-items: flex-start; flex-direction: column; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="sg-page">
+  <header class="sg-mobile-bar">
+    <a class="sg-brand" href="#top" aria-label="LinearStories styleguide home">
+      <span class="sg-brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 10h10M4 14h12M4 18h8" stroke="white" stroke-width="2.5" stroke-linecap="round" /></svg>
+      </span>
+      Styleguide
+    </a>
+    <button class="sg-menu-button" id="menuButton" type="button" aria-label="Open styleguide navigation" aria-controls="sidebar" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+    </button>
+  </header>
+
+  <div class="sg-scrim" id="scrim" aria-hidden="true"></div>
+
+  <aside class="sg-sidebar" id="sidebar">
+    <div class="sg-sidebar-head">
+      <a class="sg-brand" href="#top">
+        <span class="sg-brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 10h10M4 14h12M4 18h8" stroke="white" stroke-width="2.5" stroke-linecap="round" /></svg>
+        </span>
+        linearstories
+      </a>
+      <span class="sg-brand-meta">Styleguide / v1.0</span>
+    </div>
+
+    <nav class="sg-nav" aria-label="Styleguide sections">
+      <span class="sg-nav-group">Foundation</span>
+      <a href="#direction" data-index="00">Direction</a>
+      <a href="#colours" data-index="01">Colours</a>
+      <a href="#typography" data-index="02">Typography</a>
+      <a href="#spacing" data-index="03">Spacing &amp; shape</a>
+
+      <span class="sg-nav-group">Components</span>
+      <a href="#buttons" data-index="04">Buttons</a>
+      <a href="#forms" data-index="05">Form elements</a>
+      <a href="#cards" data-index="06">Cards</a>
+      <a href="#badges" data-index="07">Badges &amp; status</a>
+      <a href="#feedback" data-index="08">Feedback</a>
+      <a href="#data" data-index="09">Data display</a>
+      <a href="#code" data-index="10">Code</a>
+
+      <span class="sg-nav-group">Patterns</span>
+      <a href="#composition" data-index="11">Composition</a>
+      <a href="#accessibility" data-index="12">Accessibility</a>
+    </nav>
+  </aside>
+
+  <main class="sg-main" id="top">
+    <header class="sg-masthead" id="direction">
+      <div class="sg-wrap">
+        <span class="sg-kicker">Design system / dark-first</span>
+        <h1>Clarity is the <span>interface.</span></h1>
+        <p class="sg-intro">
+          LinearStories pairs an editorial human voice with the precision of developer tooling.
+          The system should feel calm, exact, and quietly luminous—never ornamental at the expense
+          of understanding.
+        </p>
+
+        <div class="sg-principles" aria-label="Design principles">
+          <div class="sg-principle">
+            <span>Goal</span>
+            <strong>Intent before interface</strong>
+            <p>Lead with why the work matters, then reveal the mechanics.</p>
+          </div>
+          <div class="sg-principle">
+            <span>Work</span>
+            <strong>Hierarchy is structure</strong>
+            <p>Use rails, nesting, and spacing to make relationships obvious.</p>
+          </div>
+          <div class="sg-principle">
+            <span>Proof</span>
+            <strong>State must be observable</strong>
+            <p>Every action, status, and criterion gets a legible signal.</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="sg-section" id="colours">
+      <div class="sg-wrap">
+        <div class="sg-section-head">
+          <span class="sg-section-index">01 / Foundation</span>
+          <div>
+            <h2 class="sg-section-title">Colours</h2>
+            <p class="sg-section-desc">A near-black neutral stack makes content feel focused. Blue and cyan are reserved for action, linkage, and system intelligence; semantic hues report state without competing with the core accent.</p>
+          </div>
+        </div>
+
+        <div class="sg-subsection">
+          <p class="sg-label">Surfaces</p>
+          <div class="sg-palette">
+            <button class="sg-swatch" type="button" style="--swatch:#0a0d12" data-copy="#0a0d12" aria-label="Copy Base colour hex value">
+              <span class="sg-swatch-name">Base</span><span class="sg-swatch-value">#0A0D12</span><span class="sg-swatch-token">--bg-base</span>
+            </button>
+            <button class="sg-swatch" type="button" style="--swatch:#0f1218" data-copy="#0f1218" aria-label="Copy Surface colour hex value">
+              <span class="sg-swatch-name">Surface</span><span class="sg-swatch-value">#0F1218</span><span class="sg-swatch-token">--bg-surface</span>
+            </button>
+            <button class="sg-swatch" type="button" style="--swatch:#161a24" data-copy="#161a24" aria-label="Copy Raised colour hex value">
+              <span class="sg-swatch-name">Raised</span><span class="sg-swatch-value">#161A24</span><span class="sg-swatch-token">--bg-raised</span>
+            </button>
+            <button class="sg-swatch" type="button" style="--swatch:#1c2130" data-copy="#1c2130" aria-label="Copy Overlay colour hex value">
+              <span class="sg-swatch-name">Overlay</span><span class="sg-swatch-value">#1C2130</span><span class="sg-swatch-token">--bg-overlay</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="sg-subsection">
+          <p class="sg-label">Action spectrum</p>
+          <div class="sg-accent-strip">
+            <div class="sg-accent" style="background:#3b82f6"><strong>Start / blue</strong><span>#3B82F6 · --accent-start</span></div>
+            <div class="sg-accent" style="background:#0ea5e9"><strong>Mid / signal</strong><span>#0EA5E9 · --accent-mid</span></div>
+            <div class="sg-accent" style="background:#06b6d4"><strong>End / cyan</strong><span>#06B6D4 · --accent-end</span></div>
+          </div>
+          <p class="sg-note">Use the full gradient for primary actions and brand moments. Use <code>--accent-mid</code> alone for focus, links, icons, and compact metadata.</p>
+        </div>
+
+        <div class="sg-subsection">
+          <p class="sg-label">Text</p>
+          <div class="sg-grid-3">
+            <div class="sg-font-card" style="background:#f0f2f8;color:#0a0d12"><div class="sg-font-glyphs" style="color:#0a0d12">Aa</div><strong>Primary · #F0F2F8</strong><span style="color:#4a5168">Headings and decisive content</span></div>
+            <div class="sg-font-card" style="background:#8892a8;color:#0a0d12"><div class="sg-font-glyphs" style="color:#0a0d12">Aa</div><strong>Secondary · #8892A8</strong><span style="color:#262d3b">Body copy and controls</span></div>
+            <div class="sg-font-card" style="background:#4a5168"><div class="sg-font-glyphs">Aa</div><strong>Muted · #4A5168</strong><span style="color:#c5cad5">Metadata and supporting labels</span></div>
+          </div>
+        </div>
+
+        <div class="sg-subsection">
+          <p class="sg-label">Semantic</p>
+          <div class="sg-semantic">
+            <div class="sg-semantic-card" style="--semantic:#34d399"><div class="sg-semantic-dot"></div><strong>Success</strong><span>#34D399 · --green</span></div>
+            <div class="sg-semantic-card" style="--semantic:#fbbf24"><div class="sg-semantic-dot"></div><strong>Warning</strong><span>#FBBF24 · --amber</span></div>
+            <div class="sg-semantic-card" style="--semantic:#f87171"><div class="sg-semantic-dot"></div><strong>Error</strong><span>#F87171 · --red</span></div>
+            <div class="sg-semantic-card" style="--semantic:#0ea5e9"><div class="sg-semantic-dot"></div><strong>Information</strong><span>#0EA5E9 · --accent-mid</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sg-section" id="typography">
+      <div class="sg-wrap">
+        <div class="sg-section-head">
+          <span class="sg-section-index">02 / Foundation</span>
+          <div>
+            <h2 class="sg-section-title">Typography</h2>
+            <p class="sg-section-desc">Three voices, each with a distinct job: Instrument Serif carries the human promise, DM Sans organises product information, and JetBrains Mono marks code, tokens, and machine-readable truth.</p>
+          </div>
+        </div>
+
+        <div class="sg-subsection">
+          <p class="sg-label">Families</p>
+          <div class="sg-grid-3">
+            <div class="sg-font-card"><div class="sg-font-glyphs" style="font-family:var(--font-display);font-style:italic">Ag 01</div><strong>Instrument Serif</strong><span>Display / brand promise</span></div>
+            <div class="sg-font-card"><div class="sg-font-glyphs" style="font-family:var(--font-sans);font-weight:600">Ag 01</div><strong>DM Sans</strong><span>Interface / prose</span></div>
+            <div class="sg-font-card"><div class="sg-font-glyphs" style="font-family:var(--font-mono);font-size:1.65rem">Ag_01</div><strong>JetBrains Mono</strong><span>Code / metadata</span></div>
+          </div>
+        </div>
+
+        <div class="sg-subsection">
+          <p class="sg-label">Scale</p>
+          <div class="sg-preview">
+            <div class="sg-type-row"><div class="sg-type-meta">Display<br />Instrument Serif / italic / 400</div><div class="sg-type-display">Make intent visible.</div></div>
+            <div class="sg-type-row"><div class="sg-type-meta">Heading 1<br />48px / 700 / −3.5%</div><div class="sg-type-h1">User stories with real criteria</div></div>
+            <div class="sg-type-row"><div class="sg-type-meta">Heading 2<br />32px / 700 / −2.5%</div><div class="sg-type-h2">High-level intent, testable work</div></div>
+            <div class="sg-type-row"><div class="sg-type-meta">Heading 3<br />20px / 700 / −1.5%</div><div class="sg-type-h3">Acceptance criteria</div></div>
+            <div class="sg-type-row"><div class="sg-type-meta">Body<br />16px / 400 / 170%</div><p class="sg-type-body">Epics explain why the work matters. User stories define an implementable slice, and acceptance criteria make “done” observable.</p></div>
+            <div class="sg-type-row"><div class="sg-type-meta">Supporting<br />12.5px / 400 / 160%</div><p class="sg-type-small">Use for captions, helper text, timestamps, and secondary interface information.</p></div>
+            <div class="sg-type-row"><div class="sg-type-meta">Mono<br />12.8px / 500</div><p class="sg-type-mono">linearstories import stories/*.md</p></div>
+          </div>
+        </div>
+
+        <p class="sg-note">Use serif sparingly: one expressive statement per composition. Product headings remain DM Sans so dense operational content stays crisp.</p>
+      </div>
+    </section>
+
+    <section class="sg-section" id="spacing">
+      <div class="sg-wrap">
+        <div class="sg-section-head">
+          <span class="sg-section-index">03 / Foundation</span>
+          <div>
+            <h2 class="sg-section-title">Spacing &amp; shape</h2>
+            <p class="sg-section-desc">The spacing scale grows from a 4px base. Compact controls use the lower half; narrative sections use 48–96px to keep the experience composed and unhurried.</p>
+          </div>
+        </div>
+
+        <div class="sg-grid-2">
+          <div>
+            <p class="sg-label">Spacing scale</p>
+            <div class="sg-preview sg-space-scale">
+              <div class="sg-space-row"><span>space-1</span><div class="sg-space-bar" style="--bar:4px"></div><span>4px</span></div>
+              <div class="sg-space-row"><span>space-2</span><div class="sg-space-bar" style="--bar:8px"></div><span>8px</span></div>
+              <div class="sg-space-row"><span>space-3</span><div class="sg-space-bar" style="--bar:12px"></div><span>12px</span></div>
+              <div class="sg-space-row"><span>space-4</span><div class="sg-space-bar" style="--bar:16px"></div><span>16px</span></div>
+              <div class="sg-space-row"><span>space-6</span><div class="sg-space-bar" style="--bar:24px"></div><span>24px</span></div>
+              <div class="sg-space-row"><span>space-8</span><div class="sg-space-bar" style="--bar:32px"></div><span>32px</span></div>
+              <div class="sg-space-row"><span>space-12</span><div class="sg-space-bar" style="--bar:48px"></div><span>48px</span></div>
+              <div class="sg-space-row"><span>space-16</span><div class="sg-space-bar" style="--bar:64px"></div><span>64px</span></div>
+              <div class="sg-space-row"><span>space-24</span><div class="sg-space-bar" style="--bar:96px"></div><span>96px</span></div>
+            </div>
+          </div>
+
+          <div class="sg-stack">
+            <div>
+              <p class="sg-label">Radius</p>
+              <div class="sg-grid-3">
+                <div class="sg-radius-card" style="border-radius:6px"><span>sm · 6px</span></div>
+                <div class="sg-radius-card" style="border-radius:10px"><span>md · 10px</span></div>
+                <div class="sg-radius-card" style="border-radius:16px"><span>lg · 16px</span></div>
+              </div>
+            </div>
+            <div>
+              <p class="sg-label">Elevation</p>
+              <div class="sg-grid-2">
+                <div class="sg-shadow-card" style="box-shadow:var(--sg-shadow-sm)"><span>Raised / local</span></div>
+                <div class="sg-shadow-card" style="box-shadow:var(--sg-shadow-lg)"><span>Floating / focus</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="sg-note">Corners communicate density: 6px for controls, 10px for compact panels, 16px for narrative cards and major windows. Avoid pill shapes except for labels, status, and singular compact actions.</p>
+      </div>
+    </section>
+
+    <section class="sg-section" id="buttons">
+      <div class="sg-wrap">
+        <div class="sg-section-head">
+          <span class="sg-section-index">04 / Components</span>
+          <div>
+            <h2 class="sg-section-title">Buttons</h2>
+            <p class="sg-section-desc">One strong action per view. Secondary and ghost buttons preserve hierarchy; red is reserved for actions that remove or irreversibly change data.</p>
+          </div>
+        </div>
+
+        <div class="sg-subsection">
+          <p class="sg-label">Variants</p>
+          <div class="sg-preview sg-preview-pad sg-row">
+            <button class="sg-button sg-button-primary" type="button">Import stories</button>
+            <button class="sg-button sg-button-secondary" type="button">Run preflight</button>
+            <button class="sg-button sg-button-ghost" type="button">View details</button>
+            <button class="sg-button sg-button-danger" type="button">Delete context</button>
+            <button class="sg-icon-button" type="button" aria-label="Copy command">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="sg-grid-2 sg-subsection">
+          <div>
+            <p class="sg-label">Sizes</p>
+            <div class="sg-preview sg-preview-pad sg-row">
+              <button class="sg-button sg-button-primary sg-button-sm" type="button">Small</button>
+              <button class="sg-button sg-button-primary" type="button">Default</button>
+              <button class="sg-button sg-button-primary sg-button-lg" type="button">Large</button>
+            </div>
+          </div>
+          <div>
+            <p class="sg-label">States</p>
+            <div class="sg-preview sg-preview-pad sg-row">
+              <button class="sg-button sg-button-primary sg-button-loading" type="button">Importing</button>
+              <button class="sg-button sg-button-secondary" type="button" disabled>Unavailable</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sg-section" id="forms">
+      <div class="sg-wrap">
+        <div class="sg-section-head">
+          <span class="sg-section-index">05 / Components</span>
+          <div>
+            <h2 class="sg-section-title">Form elements</h2>
+            <p class="sg-section-desc">Inputs are code-adjacent surfaces: dark, precise, and quiet until focused. Labels stay visible, helper text explains consequences, and errors state how to recover.</p>
+          </div>
+        </div>
+
+        <form class="sg-stack" onsubmit="event.preventDefault()">
+          <div class="sg-subsection">
+            <p class="sg-label">Text inputs</p>
+            <div class="sg-preview sg-preview-pad sg-grid-2">
+              <div class="sg-field">
+                <label class="sg-form-label" for="contextName">Context name</label>
+                <input class="sg-input" id="contextName" type="text" placeholder="e.g. engineering" />
+              </div>
+              <div class="sg-field">
+                <label class="sg-form-label" for="teamName">Linear team <span>Optional</span></label>
+                <input class="sg-input" id="teamName" type="text" value="Platform" />
+                <span class="sg-help">Overrides the team defined in the story file.</span>
+              </div>
+              <div class="sg-field">
+                <label class="sg-form-label" for="invalidKey">API key</label>
+                <input class="sg-input" id="invalidKey" type="text" value="lin_api_" aria-invalid="true" aria-describedby="keyError" />
+                <span class="sg-error" id="keyError">Enter a complete Linear API key.</span>
+              </div>
+              <div class="sg-field">
+                <label class="sg-form-label" for="disabledProject">Project</label>
+                <input class="sg-input" id="disabledProject" type="text" value="Q3 roadmap" disabled />
+              </div>
+            </div>
+          </div>
+
+          <div class="sg-grid-2 sg-subsection">
+            <div>
+              <p class="sg-label">Select</p>
+              <div class="sg-preview sg-preview-pad">
+                <div class="sg-field">
+                  <label class="sg-form-label" for="statusSelect">Workflow status</label>
+                  <div class="sg-select-wrap">
+                    <select class="sg-select" id="statusSelect">
+                      <option>Backlog</option><option>In Progress</option><option>In Review</option><option>Done</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <p class="sg-label">Textarea</p>
+              <div class="sg-preview sg-preview-pad">
+                <div class="sg-field">
+                  <label class="sg-form-label" for="rationale">Why is this needed?</label>
+                  <textarea class="sg-textarea" id="rationale" placeholder="Explain the goal and why it matters…"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sg-subsection">
+            <p class="sg-label">Selection controls</p>
+            <div class="sg-preview sg-preview-pad sg-grid-3">
+              <div class="sg-stack">
+                <strong style="font-size:.78rem">Checkboxes</strong>
+                <label class="sg-choice"><input type="checkbox" checked /><span class="sg-control"></span>Run remote preflight</label>
+                <label class="sg-choice"><input type="checkbox" /><span class="sg-control"></span>Write identifiers back</label>
+              </div>
+              <div class="sg-stack">
+                <strong style="font-size:.78rem">Radio buttons</strong>
+                <label class="sg-choice"><input type="radio" name="scope" checked /><span class="sg-control"></span>All user stories</label>
+                <label class="sg-choice"><input type="radio" name="scope" /><span class="sg-control"></span>Epics only</label>
+              </div>
+              <div class="sg-stack">
+                <strong style="font-size:.78rem">Switches</strong>
+                <label class="sg-switch"><input type="checkbox" checked /><span class="sg-switch-track"></span>Open browser</label>
+                <label class="sg-switch"><input type="checkbox" /><span class="sg-switch-track"></span>Show completed</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="sg-subsection">
+            <p class="sg-label">Range</p>
+            <div class="sg-preview sg-preview-pad">
+              <div class="sg-field">
+                <label class="sg-form-label" for="qualityRange">Story quality threshold · <output id="rangeOutput">70</output>%</label>
+                <input class="sg-range" id="qualityRange" type="range" min="0" max="100" value="70" />
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section class="sg-section" id="cards">
+      <div class="sg-wrap">
+        <div class="sg-section-head">
+          <span class="sg-section-index">06 / Components</span>
+          <div>
+            <h2 class="sg-section-title">Cards</h2>
+            <p class="sg-section-desc">Cards group one coherent idea. Border contrast carries most of the separation; shadows appear only when a card floats, moves, or requires attention.</p>
+          </div>
+        </div>
+
+        <div class="sg-subsection">
+          <p class="sg-label">Feature cards</p>
+          <div class="sg-grid-3">
+            <article class="sg-card sg-card-interactive">
+              <div class="sg-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6M8 13h8M8 17h6" /></svg></div>
+              <h3>Markdown is the source</h3>
+              <p>Product intent stays portable, reviewable, and version controlled.</p>
+            </article>
+            <article class="sg-card sg-card-interactive">
+              <div class="sg-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.17.37.38.7.6 1 .29.34.68.53 1.1.6H21v4h-.09A1.7 1.7 0 0 0 19.4 15z" /></svg></div>
+              <h3>Preflight before mutation</h3>
+              <p>Validation surfaces ambiguity before any remote issue changes.</p>
+            </article>
+            <article class="sg-card sg-card-interactive">
+              <div class="sg-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 3v18h18" /><path d="m7 16 4-5 3 3 5-7" /></svg></div>
+              <h3>Completion is visible</h3>
+              <p>Atlas turns epics, stories, and criteria into an inspectable map.</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="sg-subsection">
+          <p class="sg-label">Operational card</p>
+          <article class="sg-story-card">
+            <div class="sg-story-meta"><span>ENG-142 · USER STORY</span><span>3 / 4 complete</span></div>
+            <h3>As a team lead, I want to review the delivery map</h3>
+            <p>Project Atlas should expose hierarchy and completion without changing the source file.</p>
+            <div class="sg-progress" aria-label="75% complete"><span style="--progress:75%"></span></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="sg-section" id="badges">
+      <div class="sg-wrap">
+        <div class="sg-section-head">
+          <span class="sg-section-index">07 / Components</span>
+          <div>
+            <h2 class="sg-section-title">Badges &amp; status</h2>
+            <p class="sg-section-desc">Pills report finite state; compact rectangular tags represent user-defined labels or technical metadata. Never rely on hue alone—pair colour with text and, where useful, a shape.</p>
+          </div>
+        </div>
+
+        <div class="sg-grid-2">
+          <div>
+            <p class="sg-label">Status</p>
+            <div class="sg-preview sg-preview-pad sg-row">
+              <span class="sg-badge"><span class="sg-badge-dot"></span>Backlog</span>
+              <span class="sg-badge sg-badge-blue"><span class="sg-badge-dot"></span>In progress</span>
+              <span class="sg-badge sg-badge-amber"><span class="sg-badge-dot"></span>In review</span>
+              <span class="sg-badge sg-badge-green"><span class="sg-badge-dot"></span>Done</span>
+              <span class="sg-badge sg-badge-red"><span class="sg-badge-dot"></span>Blocked</span>
+            </div>
+          </div>
+          <div>
+            <p class="sg-label">Labels</p>
+            <div class="sg-preview sg-preview-pad sg-row">
+              <span class="sg-tag">Epic</span><span class="sg-tag">Feature</span><span class="sg-tag">Authentication</span><span class="sg-tag">priority: 2</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sg-section" id="feedback">
+      <div class="sg-wrap">
+        <div class="sg-section-head">
+          <span class="sg-section-index">08 / Components</span>
+          <div>
+            <h2 class="sg-section-title">Feedback</h2>
+            <p class="sg-section-desc">Feedback should be specific, calm, and actionable. Use inline alerts for persistent context, a toast for brief confirmation, and a modal only when the user must make a consequential choice.</p>
+          </div>
+        </div>
+
+        <div class="sg-grid-2">
+          <div class="sg-stack">
+            <div class="sg-alert" style="--alert:#0ea5e9"><span class="sg-alert-icon">i</span><div><strong>Remote preflight available</strong><p>Validate teams, labels, projects, and hierarchy before importing.</p></div></div>
+            <div class="sg-alert" style="--alert:#34d399"><span class="sg-alert-icon">✓</span><div><strong>Import complete</strong><p>Three issues created and two sub-issues linked.</p></div></div>
+            <div class="sg-alert" style="--alert:#fbbf24"><span class="sg-alert-icon">!</span><div><strong>Label will be skipped</strong><p>The target team does not contain the “Research” label.</p></div></div>
+            <div class="sg-alert" style="--alert:#f87171"><span class="sg-alert-icon">×</span><div><strong>Hierarchy conflict</strong><p>The selected epic is already nested under another issue.</p></div></div>
+          </div>
+          <div class="sg-preview sg-preview-pad sg-stack" style="align-content:center">
+            <p style="color:var(--text-secondary);font-size:.82rem;line-height:1.65">Transient confirmation disappears automatically. Consequential choices belong in a focused dialog with a clear exit.</p>
+            <div class="sg-row">
+              <button class="sg-button sg-button-secondary" id="toastButton" type="button">Show toast</button>
+              <button class="sg-button sg-button-primary" id="dialogButton" type="button">Open dialog</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sg-section" id="data">
+      <div class="sg-wrap">
+        <div class="sg-section-head">
+          <span class="sg-section-index">09 / Components</span>
+          <div>
+            <h2 class="sg-section-title">Data display</h2>
+            <p class="sg-section-desc">Tables support comparison, not decoration. Keep labels compact, align repeated values consistently, and give row states enough contrast to scan without turning the grid into a spreadsheet.</p>
+          </div>
+        </div>
+
+        <div class="sg-table-wrap">
+          <table class="sg-table">
+            <thead><tr><th>Issue</th><th>Type</th><th>Status</th><th>Criteria</th><th>Quality</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Account access</strong><br /><span class="sg-token">ENG-120</span></td><td><span class="sg-tag">Epic</span></td><td><span class="sg-badge sg-badge-blue"><span class="sg-badge-dot"></span>In progress</span></td><td>—</td><td>92%</td></tr>
+              <tr><td><strong>Log in with email</strong><br /><span class="sg-token">ENG-121</span></td><td>User story</td><td><span class="sg-badge sg-badge-amber"><span class="sg-badge-dot"></span>In review</span></td><td>3 / 3</td><td>88%</td></tr>
+              <tr><td><strong>Recover account</strong><br /><span class="sg-token">ENG-122</span></td><td>User story</td><td><span class="sg-badge"><span class="sg-badge-dot"></span>Backlog</span></td><td>0 / 4</td><td>76%</td></tr>
+              <tr><td><strong>Session timeout</strong><br /><span class="sg-token">ENG-123</span></td><td>User story</td><td><span class="sg-badge sg-badge-red"><span class="sg-badge-dot"></span>Blocked</span></td><td>1 / 3</td><td>68%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="sg-section" id="code">
+      <div class="sg-wrap">
+        <div class="sg-section-head">
+          <span class="sg-section-index">10 / Components</span>
+          <div>
+            <h2 class="sg-section-title">Code &amp; machine truth</h2>
+            <p class="sg-section-desc">Code windows are the bridge between the editorial promise and the CLI. Keep syntax colour low-key, filenames explicit, and commands copyable.</p>
+          </div>
+        </div>
+
+        <div class="sg-grid-2">
+          <div class="sg-code-window">
+            <div class="sg-code-chrome"><span class="sg-code-dot" style="background:#ff5f57"></span><span class="sg-code-dot" style="background:#ffbd2e"></span><span class="sg-code-dot" style="background:#28c941"></span><span class="sg-code-title">stories.md</span></div>
+            <div class="sg-code-body"><pre><span class="tok-heading">## As a user, I want to log in</span>
+
+<span class="tok-key">epic:</span> <span class="tok-string">Account access</span>
+<span class="tok-key">labels:</span> <span class="tok-bracket">[</span><span class="tok-string">Feature, Auth</span><span class="tok-bracket">]</span>
+
+<span class="tok-heading">### Acceptance Criteria</span>
+<span class="tok-checked">- [ ]</span> Email and password are accepted
+<span class="tok-checked">- [ ]</span> Invalid credentials show an error
+<span class="tok-checked">- [ ]</span> Success opens the dashboard</pre></div>
+          </div>
+
+          <div class="sg-stack">
+            <div class="sg-code-window">
+              <div class="sg-code-chrome"><span class="sg-code-dot" style="background:var(--green)"></span><span class="sg-code-title">terminal</span></div>
+              <div class="sg-code-body"><pre><span class="tok-key">$</span> linearstories import stories/*.md
+<span class="tok-comment">Parsing stories/*.md…</span>
+Found <span class="tok-number">1 epic</span> and <span class="tok-number">2 user stories</span>
+<span class="tok-string">✓ Remote preflight passed</span></pre></div>
+            </div>
+            <div class="sg-preview sg-preview-pad">
+              <p style="color:var(--text-secondary);font-size:.84rem;line-height:1.75">Use inline code for commands such as <code class="sg-inline-code">linearstories visualize</code>, configuration keys such as <code class="sg-inline-code">defaultTeam</code>, and exact labels such as <code class="sg-inline-code">Epic</code>.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sg-section" id="composition">
+      <div class="sg-wrap">
+        <div class="sg-section-head">
+          <span class="sg-section-index">11 / Patterns</span>
+          <div>
+            <h2 class="sg-section-title">Composition patterns</h2>
+            <p class="sg-section-desc">The system’s recurring pattern is progressive disclosure: state the goal, expose the work, then provide proof. Navigation stays quiet; the information hierarchy does the storytelling.</p>
+          </div>
+        </div>
+
+        <div class="sg-subsection">
+          <p class="sg-label">Navigation</p>
+          <div class="sg-pattern-nav">
+            <a class="sg-brand" href="#composition">
+              <span class="sg-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 10h10M4 14h12M4 18h8" stroke="white" stroke-width="2.5" stroke-linecap="round" /></svg></span>
+              linearstories
+            </a>
+            <div class="sg-pattern-links"><a href="#composition">How it works</a><a href="#composition">Features</a><a href="#composition">Atlas</a></div>
+            <button class="sg-button sg-button-primary sg-button-sm" type="button">Get started</button>
+          </div>
+        </div>
+
+        <div class="sg-grid-2 sg-subsection">
+          <div>
+            <p class="sg-label">Tabs</p>
+            <div class="sg-preview sg-preview-pad">
+              <div class="sg-tabs" role="tablist" aria-label="Story hierarchy">
+                <button class="sg-tab" id="tabGoal" role="tab" type="button" aria-controls="panelGoal" aria-selected="true">Goal</button>
+                <button class="sg-tab" id="tabWork" role="tab" type="button" aria-controls="panelWork" aria-selected="false">Work</button>
+                <button class="sg-tab" id="tabProof" role="tab" type="button" aria-controls="panelProof" aria-selected="false">Proof</button>
+              </div>
+              <div class="sg-tab-panel" id="panelGoal" role="tabpanel" aria-labelledby="tabGoal">Epics define the outcome, its boundaries, and why it is worth pursuing.</div>
+              <div class="sg-tab-panel" id="panelWork" role="tabpanel" aria-labelledby="tabWork" hidden>User stories describe focused, implementable slices linked back to the goal.</div>
+              <div class="sg-tab-panel" id="panelProof" role="tabpanel" aria-labelledby="tabProof" hidden>Acceptance criteria turn intent into observable pass-or-fail evidence.</div>
+            </div>
+          </div>
+
+          <div>
+            <p class="sg-label">Hierarchy rail</p>
+            <div class="sg-preview sg-preview-pad">
+              <strong style="font-size:.82rem">Acceptance criteria</strong>
+              <div class="sg-acceptance">
+                <div class="sg-criterion"><span class="sg-check">✓</span><span>User can enter email and password</span></div>
+                <div class="sg-criterion"><span class="sg-check">✓</span><span>Invalid credentials show a clear error</span></div>
+                <div class="sg-criterion"><span class="sg-check">✓</span><span>Success redirects to the dashboard</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sg-subsection">
+          <p class="sg-label">Usage principles</p>
+          <div class="sg-rule-grid">
+            <div class="sg-rule"><div class="sg-rule-head" style="color:var(--green)">Do</div><ul><li>Lead each view with one clear outcome.</li><li>Use spacing and alignment before adding containers.</li><li>Reserve the gradient for action and structural emphasis.</li><li>Write labels that describe the result of an action.</li></ul></div>
+            <div class="sg-rule"><div class="sg-rule-head" style="color:var(--red)">Avoid</div><ul><li>Multiple equally prominent calls to action.</li><li>Serif type for dense operational content.</li><li>Decorative glows without information value.</li><li>Colour-only status or vague error messages.</li></ul></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sg-section" id="accessibility">
+      <div class="sg-wrap">
+        <div class="sg-section-head">
+          <span class="sg-section-index">12 / Standards</span>
+          <div>
+            <h2 class="sg-section-title">Accessibility</h2>
+            <p class="sg-section-desc">Clarity includes everyone. Components must remain understandable with a keyboard, screen reader, reduced motion, zoom, or without colour perception.</p>
+          </div>
+        </div>
+
+        <div class="sg-grid-3">
+          <article class="sg-card"><span class="sg-kicker" style="margin-bottom:20px">01 / Contrast</span><h3>Text stays legible</h3><p>Use primary text for headings, secondary for body copy, and muted text only for non-essential metadata. Never place muted text on raised surfaces for required information.</p></article>
+          <article class="sg-card"><span class="sg-kicker" style="margin-bottom:20px">02 / Input</span><h3>Keyboard is first-class</h3><p>All controls need a visible focus ring, logical order, accessible name, and a hit target of roughly 40px or larger for primary interactions.</p></article>
+          <article class="sg-card"><span class="sg-kicker" style="margin-bottom:20px">03 / Motion</span><h3>Movement has purpose</h3><p>Use the 150–220ms range for feedback and the 700–900ms range only for one orchestrated entrance. Honour <span class="sg-token">prefers-reduced-motion</span>.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <footer class="sg-footer">
+      <div class="sg-wrap sg-footer-inner">
+        <span><code>linearstories / styleguide v1.0</code></span>
+        <span>Derived from the <a href="index.html">LinearStories product site</a> · built for precise product work.</span>
+      </div>
+    </footer>
+  </main>
+
+  <div class="sg-toast" id="toast" role="status" aria-live="polite">Story imported successfully.</div>
+
+  <dialog class="sg-dialog" id="exampleDialog" aria-labelledby="dialogTitle">
+    <div class="sg-dialog-body">
+      <span class="sg-kicker" style="margin-bottom:18px">Confirm mutation</span>
+      <h3 id="dialogTitle">Import three Linear issues?</h3>
+      <p>Remote preflight passed. This will create one epic and two linked user stories in the Platform team.</p>
+    </div>
+    <div class="sg-dialog-actions">
+      <button class="sg-button sg-button-ghost" id="cancelDialog" type="button">Cancel</button>
+      <button class="sg-button sg-button-primary" id="confirmDialog" type="button">Import issues</button>
+    </div>
+  </dialog>
+
+  <script>
+    const sidebar = document.querySelector("#sidebar");
+    const menuButton = document.querySelector("#menuButton");
+    const scrim = document.querySelector("#scrim");
+    const navLinks = [...document.querySelectorAll(".sg-nav a")];
+
+    function setMenu(open) {
+      sidebar.classList.toggle("is-open", open);
+      scrim.classList.toggle("is-visible", open);
+      menuButton.setAttribute("aria-expanded", String(open));
+      document.body.style.overflow = open ? "hidden" : "";
+    }
+
+    menuButton.addEventListener("click", () => setMenu(!sidebar.classList.contains("is-open")));
+    scrim.addEventListener("click", () => setMenu(false));
+    navLinks.forEach((link) => link.addEventListener("click", () => setMenu(false)));
+
+    const observedSections = navLinks
+      .map((link) => document.querySelector(link.getAttribute("href")))
+      .filter(Boolean);
+
+    const sectionObserver = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (!visible) return;
+      navLinks.forEach((link) => {
+        link.classList.toggle("is-active", link.getAttribute("href") === `#${visible.target.id}`);
+      });
+    }, { rootMargin: "-15% 0px -65%", threshold: [0, 0.15, 0.4] });
+
+    observedSections.forEach((section) => sectionObserver.observe(section));
+
+    const toast = document.querySelector("#toast");
+    let toastTimer;
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("is-visible");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 1800);
+    }
+
+    document.querySelectorAll("[data-copy]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const value = button.dataset.copy;
+        try {
+          await navigator.clipboard.writeText(value);
+          showToast(`${value.toUpperCase()} copied to clipboard.`);
+        } catch {
+          showToast(value.toUpperCase());
+        }
+      });
+    });
+
+    document.querySelector("#toastButton").addEventListener("click", () => showToast("Story imported successfully."));
+
+    const dialog = document.querySelector("#exampleDialog");
+    document.querySelector("#dialogButton").addEventListener("click", () => dialog.showModal());
+    document.querySelector("#cancelDialog").addEventListener("click", () => dialog.close());
+    document.querySelector("#confirmDialog").addEventListener("click", () => {
+      dialog.close();
+      showToast("Three issues queued for import.");
+    });
+
+    const range = document.querySelector("#qualityRange");
+    const rangeOutput = document.querySelector("#rangeOutput");
+    range.addEventListener("input", () => {
+      rangeOutput.value = range.value;
+      range.style.background = `linear-gradient(90deg, var(--accent-mid) 0 ${range.value}%, var(--bg-overlay) ${range.value}% 100%)`;
+    });
+
+    const tabs = [...document.querySelectorAll("[role='tab']")];
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        tabs.forEach((candidate) => {
+          const selected = candidate === tab;
+          candidate.setAttribute("aria-selected", String(selected));
+          document.querySelector(`#${candidate.getAttribute("aria-controls")}`).hidden = !selected;
+        });
+      });
+    });
+  </script>
+</body>
+</html>
