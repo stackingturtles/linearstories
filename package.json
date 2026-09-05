@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.7.0",
-    "@linear/sdk": "^88.2.0",
+    "@linear/sdk": "^92.0.0",
     "chalk": "^5.6.2",
     "commander": "^15.0.0",
     "glob": "^13.0.4",
